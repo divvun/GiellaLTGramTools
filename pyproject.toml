@@ -12,6 +12,29 @@ pyyaml = "^6.0.1"
 corpustools = {git = "https://github.com/giellalt/CorpusTools"}
 
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.1.7"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "F", #Pyflakes
+    "B", #flake8-bugbear
+    "A", #flake8-builtins 
+    "C4", #flake8-comprehensions
+    "ERA", #eradicate
+    "I", #isort
+    "PT", #flake8-pytest-style
+    "C90", #mccabe
+    "N", #pep8-naming
+    "E", #pycodestyle error
+    "PL" #Pylint
+]
+ignore = ["A003"]
