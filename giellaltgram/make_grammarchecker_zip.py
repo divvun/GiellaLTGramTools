@@ -33,8 +33,9 @@ def make_archive(specfile, archive_name):
             archive_zip.write(filename)
 
 
-if __name__ == "__main__":
+def main():
+    """Make grammarchecker archive without '-dev' variants."""
     try:
         make_archive(specfile=sys.argv[1], archive_name=sys.argv[2])
     except FileNotFoundError as error:
-        raise SystemExit(error)
+        print(error, file=sys.stderr)
