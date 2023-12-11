@@ -178,12 +178,12 @@ class YamlGramTest(GramTest):
                 )
 
             with io.StringIO() as temp_stream:
-                with self.config["test_file"].open("r") as input:
+                with self.config["test_file"].open("r") as _input:
                     temp_stream.write(
                         "".join(
                             [
                                 line
-                                for line in input
+                                for line in _input
                                 if not any(
                                     passing_test in line.strip()
                                     for passing_test in passing_tests
