@@ -2,12 +2,13 @@
 # -*- coding:utf-8 -*-
 
 # Copyright © 2023 UiT The Arctic University of Norway
-# License: GPL3
+# License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 """Make a grammarchecker zip archive without '-dev' variants"""
-from lxml import etree
-from zipfile import ZipFile
 import sys
+from zipfile import ZipFile
+
+from lxml import etree
 
 
 def get_pipespec(spec_file):

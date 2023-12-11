@@ -20,7 +20,7 @@ from io import StringIO
 from pathlib import Path
 from zipfile import ZipFile
 
-from corpustools import ccat, errormarkup
+from corpustools import ccat
 from lxml import etree
 
 
