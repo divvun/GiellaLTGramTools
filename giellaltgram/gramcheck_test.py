@@ -269,16 +269,3 @@ def main():
         ui.start()
     except KeyboardInterrupt:
         sys.exit(130)
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except (
-        FileNotFoundError,
-        yaml.scanner.ScannerError,
-        yaml.parser.ParserError,
-        errormarkup.ErrorMarkupError,
-    ) as error:
-        print(str(error), file=sys.stderr)
-        raise SystemExit(1)

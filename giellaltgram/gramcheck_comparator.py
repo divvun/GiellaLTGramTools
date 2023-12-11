@@ -983,10 +983,6 @@ def main():
         ui.start()
     except KeyboardInterrupt:
         sys.exit(130)
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except (FileNotFoundError, errormarkup.ErrorMarkupError) as error:
-        raise SystemExit(error)
+    except Exception as error:
+        print(f"An error occurred: {error}")
+        raise SystemExit from error
