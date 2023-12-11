@@ -15,6 +15,10 @@ corpustools = {git = "https://github.com/giellalt/CorpusTools"}
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.7"
 
+[tool.poetry.scripts]
+gramcheck-yaml= "giellaltgram.gramcheck_test:main"
+gramcheck-xml= "giellaltgram.gramcheck_comparator:main"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
