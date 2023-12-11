@@ -2,12 +2,15 @@
 # -*- coding:utf-8 -*-
 
 # Copyright © 2020-2023 UiT The Arctic University of Norway
-# License: GPL3
+# License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
+
 """Write report on differences on manual markup and gramdivvun markup"""
 import ctypes
 import io
+import json
 import os
+import subprocess
 import sys
 import tempfile
 from argparse import ArgumentParser
@@ -15,10 +18,22 @@ from collections import Counter
 from contextlib import contextmanager
 from io import StringIO
 from pathlib import Path
+from zipfile import ZipFile
 
-import libdivvun
 from corpustools import ccat, errormarkup
 from lxml import etree
+
+
+def get_pipespecs(name: Path):
+    def get_parsed():
+        if name.suffix == ".zcheck":
+            with ZipFile(name) as archive:
+                with archive.open("pipespec.xml") as pipespec:
+                    return etree.parse(pipespec)
+        return etree.parse(name)
+
+    parsed = get_parsed()
+    return parsed.getroot().attrib["default-pipe"], parsed.xpath(".//pipeline/@name")
 
 
 @contextmanager
@@ -94,30 +109,16 @@ class GramChecker:
         self.ignore_typos = ignore_typos
 
     def check_grammar(self, sentence):
-        f = io.BytesIO()
+        """Check grammar of a sentence."""
+        result = subprocess.run(
+            self.checker.split(),
+            input=sentence.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
 
-        with stderr_redirector(f):  # catch stderr from libdivvun
-            d_errors = libdivvun.proc_errs_bytes(self.checker, sentence)
-
-        errs = [
-            [
-                d_error.form,
-                d_error.beg,
-                d_error.end,
-                d_error.err,
-                d_error.dsc,
-                [
-                    rep
-                    if d_error.form != d_error.form.capitalize()
-                    else rep.capitalize()
-                    for rep in d_error.rep
-                ],
-                d_error.msg,
-            ]
-            for d_error in d_errors
-        ]
-
-        return {"text": sentence, "errs": errs}
+        return json.loads(result.stdout.decode("utf-8"))
 
     @staticmethod
     def remove_dupes(double_spaces, d_errors):
@@ -476,24 +477,17 @@ class CorpusGramChecker(GramChecker):
 
     def __init__(self, archive, ignore_typos):
         super().__init__(ignore_typos)
-        self.archive = archive
-        self.checker = self.app()
+        self.checker = self.app(archive)
 
-    def app(self):
+    def app(self, archive: str):
         def print_error(string):
             print(string, file=sys.stderr)
 
-        archive_file = Path(self.archive)
+        archive_file = Path(archive)
         if archive_file.is_file():
-            spec = libdivvun.ArCheckerSpec(str(archive_file))
-            pipename = spec.defaultPipe()
-            verbose = False
-            return spec.getChecker(pipename, verbose)
+            return f"divvun-checker -a {archive_file}"
         else:
-            print_error(
-                "Error in section Archive of the yaml file.\n"
-                + f"The file {archive_file} does not exist"
-            )
+            print_error(f"The file {archive_file} does not exist")
             sys.exit(2)
 
 

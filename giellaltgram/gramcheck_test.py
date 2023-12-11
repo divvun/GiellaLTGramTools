@@ -2,20 +2,25 @@
 # -*- coding:utf-8 -*-
 
 # Copyright © 2020-2023 UiT The Arctic University of Norway
-# License: GPL3
+# License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 """Check if grammarchecker tests pass."""
 
+import io
 import sys
 from pathlib import Path
-import io
 
-import libdivvun
 import yaml
+from corpustools import errormarkup
 from lxml import etree
 
-from corpustools import errormarkup
-from gramcheck_comparator import COLORS, UI, GramChecker, GramTest
+from giellaltgram.gramcheck_comparator import (
+    COLORS,
+    UI,
+    GramChecker,
+    GramTest,
+    get_pipespecs,
+)
 
 
 class YamlGramChecker(GramChecker):
@@ -28,40 +33,40 @@ class YamlGramChecker(GramChecker):
     def print_error(string):
         print(string, file=sys.stderr)
 
-    def get_variant(self, checker_spec):
-        for variant in self.config.get("variants"):
-            if checker_spec.hasPipe(variant):
-                return variant
+    def get_variant(self, spec_file: Path):
+        (default_pipe, available_variants) = get_pipespecs(spec_file)
+
+        if self.config.get("variants") is None:
+            return f"--variant {default_pipe}"
+
+        variants = {
+            variant.replace("-dev", "") if spec_file.suffix == ".zhfst" else variant
+            for variant in self.config.get("variants")
+        }
+        for variant in variants:
+            if variant in available_variants:
+                return f"--variant {variant}"
+
+        self.print_error(
+            "Error in section Variant of the yaml file.\n"
+            "There is no pipeline named "
+            f"{variant} in {spec_file}"
+        )
+        available_names = "\n".join(available_variants)
+        self.print_error("Available pipelines are\n" f"{available_names}")
+
+        raise SystemExit(5)
 
     def app(self):
         spec_file = self.config.get("spec")
 
         checker_spec = (
-            libdivvun.ArCheckerSpec(spec_file.as_posix())
+            f"--archive {spec_file}"
             if spec_file.suffix == ".zcheck"
-            else libdivvun.CheckerSpec(str(spec_file))
+            else f"--spec {spec_file}"
         )
-        if self.config.get("variants") is None:
-            return checker_spec.getChecker(
-                pipename=checker_spec.defaultPipe(),
-                verbose=False,
-            )
-        else:
-            variant = self.get_variant(checker_spec)
-            if variant is not None:
-                return checker_spec.getChecker(
-                    pipename=variant,
-                    verbose=False,
-                )
-            else:
-                self.print_error(
-                    "Error in section Variant of the yaml file.\n"
-                    "There is no pipeline named "
-                    f"{variant} in {spec_file}"
-                )
-                available_names = "\n".join(checker_spec.pipeNames())
-                self.print_error("Available pipelines are\n" f"{available_names}")
-                sys.exit(5)
+
+        return f"divvun-checker {checker_spec} {self.get_variant(spec_file)}"
 
 
 class YamlGramTest(GramTest):
