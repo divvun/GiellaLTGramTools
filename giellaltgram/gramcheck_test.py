@@ -185,10 +185,8 @@ class YamlGramTest(GramTest):
                                 line
                                 for line in input
                                 if not any(
-                                    [
-                                        passing_test in line.strip()
-                                        for passing_test in passing_tests
-                                    ]
+                                    passing_test in line.strip()
+                                    for passing_test in passing_tests
                                 )
                             ]
                         )

@@ -853,7 +853,7 @@ class GramTest:
     def run(self):
         self.run_tests()
 
-        return 1 if any([key.startswith("f") for key in self.count]) else 0
+        return 1 if any(key.startswith("f") for key in self.count) else 0
 
     def __str__(self):
         return str(self.config.get("out"))
