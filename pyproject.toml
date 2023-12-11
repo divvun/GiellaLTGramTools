@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "giellaltgram"
+name = "GiellaLTGram"
 version = "0.1.0"
-description = ""
+description = "Package and test grammar files for the GiellaLT project"
 authors = ["Børre Gaup <albbas@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 lxml = "^4.9.3"
 pyyaml = "^6.0.1"
 corpustools = {git = "https://github.com/giellalt/CorpusTools"}
