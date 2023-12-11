@@ -18,6 +18,7 @@ ruff = "^0.1.7"
 [tool.poetry.scripts]
 gramcheck-yaml= "giellaltgram.gramcheck_test:main"
 gramcheck-xml= "giellaltgram.gramcheck_comparator:main"
+make_grammarchecker_zip = "giellaltgram.make_grammarchecker_zip:main"
 
 [build-system]
 requires = ["poetry-core"]
