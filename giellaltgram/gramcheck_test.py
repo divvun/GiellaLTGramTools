@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from corpustools import errormarkup
+from corpustools import errormarkup  # type: ignore
 from lxml import etree
 
 from giellaltgram.gramcheck_comparator import (

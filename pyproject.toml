@@ -14,6 +14,9 @@ corpustools = {git = "https://github.com/giellalt/CorpusTools"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.1.7"
+mypy = "^1.8.0"
+types-lxml = "^2024.2.9"
+types-pyyaml = "^6.0.12.12"
 
 [tool.poetry.scripts]
 gramcheck-yaml= "giellaltgram.gramcheck_test:main"
