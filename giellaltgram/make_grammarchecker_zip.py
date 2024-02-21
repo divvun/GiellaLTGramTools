@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 # Copyright © 2023 UiT The Arctic University of Norway
