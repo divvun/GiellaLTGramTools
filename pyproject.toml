@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "GiellaLTGram"
+name = "GiellaLTGramTools"
 version = "0.1.0"
 description = "Package and test grammar files for the GiellaLT project"
 authors = ["Børre Gaup <albbas@gmail.com>"]
