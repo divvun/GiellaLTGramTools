@@ -19,7 +19,7 @@ from io import StringIO
 from pathlib import Path
 from zipfile import ZipFile
 
-from corpustools import ccat
+from corpustools import ccat  # type: ignore
 from lxml import etree
 
 
