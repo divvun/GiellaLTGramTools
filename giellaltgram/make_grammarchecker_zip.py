@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
 
-# Copyright © 2023 UiT The Arctic University of Norway
+# Copyright © 2023-2024 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 """Make a grammarchecker zip archive without '-dev' variants"""
