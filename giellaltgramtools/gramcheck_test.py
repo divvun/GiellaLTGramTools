@@ -13,7 +13,7 @@ import yaml
 from corpustools import errormarkup  # type: ignore
 from lxml import etree
 
-from giellaltgram.gramcheck_comparator import (
+from giellaltgramtools.gramcheck_comparator import (
     COLORS,
     UI,
     GramChecker,

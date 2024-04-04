@@ -19,9 +19,9 @@ types-lxml = "^2024.2.9"
 types-pyyaml = "^6.0.12.12"
 
 [tool.poetry.scripts]
-gramcheck-yaml= "giellaltgram.gramcheck_test:main"
-gramcheck-xml= "giellaltgram.gramcheck_comparator:main"
-make_grammarchecker_zip = "giellaltgram.make_grammarchecker_zip:main"
+gramcheck-yaml= "giellaltgramtools.gramcheck_test:main"
+gramcheck-xml= "giellaltgramtools.gramcheck_comparator:main"
+make_grammarchecker_zip = "giellaltgramtools.make_grammarchecker_zip:main"
 
 [build-system]
 requires = ["poetry-core"]
