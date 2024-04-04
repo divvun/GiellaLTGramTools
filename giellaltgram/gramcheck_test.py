@@ -164,17 +164,27 @@ class YamlGramTest(GramTest):
 
     @property
     def paragraphs(self):
+        if not self.config["tests"]:
+            return []
+
         grammarchecker = YamlGramChecker(self.config)
 
+        error_datas = [
+            grammarchecker.paragraph_to_testdata(self.make_error_markup(text))
+            for text in self.config["tests"]
+        ]
+        grammar_datas = grammarchecker.check_paragraphs(
+            "\n".join(error_data[0] for error_data in error_datas)
+        )
+
         return (
-            (
-                grammarchecker.get_data(
-                    str(self.config["test_file"]), self.make_error_markup(text)
-                )
-                for text in self.config["tests"]
+            grammarchecker.clean_data(
+                sentence=item[0][0],
+                expected_errors=item[0][1],
+                gramcheck_errors=item[1],
+                filename=self.config["test_file"].name,
             )
-            if self.config["tests"]
-            else []
+            for item in zip(error_datas, grammar_datas, strict=True)
         )
 
     def move_passes_from_fail(self):

@@ -107,17 +107,20 @@ class GramChecker:
     def __init__(self, ignore_typos=False):
         self.ignore_typos = ignore_typos
 
-    def check_grammar(self, sentence):
-        """Check grammar of a sentence."""
+    def check_paragraphs(self, paragraphs):
+        """Check grammar of a paragraphs."""
         result = subprocess.run(
             self.checker.split(),
-            input=sentence.encode("utf-8"),
+            input=paragraphs.encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=True,
         )
 
-        return json.loads(result.stdout.decode("utf-8"))
+        lines = result.stdout.decode("utf-8").strip().split("\n")
+        return [
+            gram_error.get("errs") for gram_error in json.loads(f"[{','.join(lines)}]")
+        ]
 
     @staticmethod
     def remove_dupes(double_spaces, d_errors):
@@ -229,7 +232,7 @@ class GramChecker:
 
     def fix_aistton_both(self, d_error, d_errors, position):
         if d_error[0][-1] != "”":
-            right_error = [part for part in d_error]
+            right_error = list(d_error)
             right_error[0] = right_error[0][-1]
             right_error[5] = ["”"]
             right_error[1] = right_error[2] - 1
@@ -373,48 +376,16 @@ class GramChecker:
             if d_error[1:2] == error[1:2]
         ]
 
-    def correct_lowest_level(self, para):
-        """Replace error markup of zero length with correction."""
-        new_para = etree.Element(para.tag)
-        new_para.text = para.text if para.text else ""
-
-        for child in para:
-            if child.tag.startswith("error"):
-                if self.is_non_nested_error(child):
-                    if len(new_para):
-                        new_para[-1].tail += extract_correction(child)
-                    else:
-                        new_para.text += extract_correction(child)
-                else:
-                    new_para.append(self.correct_lowest_level(child))
-            else:
-                new_para.append(child)
-
-        new_para.tail = para.tail if para.tail else ""
-
-        return new_para
-
-    def nested_errors(self, para):
-        """Grammarcheck a level at a time."""
-        while True:
-            para = self.correct_lowest_level(para)
-            if self.is_non_nested_error(para):
-                break
-            _, errors, d_errors = self.error_extractor(para)
-            yield errors, self.remove_non_hits(errors, d_errors)
-
-    def error_extractor(self, para):
-        """Extract sentence, markup errors and grammarchecker errors."""
+    def paragraph_to_testdata(self, para):
+        """Extract sentence and markup errors."""
         parts = []
         errors = []
         self.extract_error_info(parts, errors, para)
         self.normalise_error_markup(errors)
 
         sentence = "".join(parts)
-        d_errors = self.check_sentence(sentence)
-        self.normalise_grammar_markup(d_errors)
 
-        return sentence, errors, d_errors
+        return sentence, errors
 
     def remove_foreign(self, marked_errors, found_errors):
         """Remove foreign language error elements."""
@@ -451,22 +422,21 @@ class GramChecker:
             [found_error for found_error in found_errors if found_error[3] != "typo"],
         )
 
-    def get_data(self, filename, para):
+    def clean_data(self, sentence, expected_errors, gramcheck_errors, filename):
         """Extract data for reporting from a paragraph."""
-        sentence, errors, d_errors = self.error_extractor(para)
-
-        for next_errors, next_d_errors in self.nested_errors(para):
-            errors.extend(next_errors)
-            d_errors.extend(next_d_errors)
-
-        errors, d_errors = self.remove_foreign(errors, d_errors)
+        self.normalise_grammar_markup(gramcheck_errors)
+        expected_errors, gramcheck_errors = self.remove_foreign(
+            expected_errors, gramcheck_errors
+        )
         if self.ignore_typos:
-            errors, d_errors = self.remove_typo(errors, d_errors)
+            expected_errors, gramcheck_errors = self.remove_typo(
+                expected_errors, gramcheck_errors
+            )
 
         return {
             "uncorrected": sentence,
-            "expected_errors": errors,
-            "gramcheck_errors": d_errors,
+            "expected_errors": expected_errors,
+            "gramcheck_errors": gramcheck_errors,
             "filename": filename,
         }
 
@@ -922,6 +892,16 @@ class CorpusGramTest(GramTest):
 
             parent.remove(url)
 
+    def get_error_data(self, filename, grammarchecker):
+        root = etree.parse(filename)
+        self.keep_url(root)
+        for para in root.iter("p"):
+            # the xml:lang attribute indicates that the sentence is not the expected
+            # language. These paragraphs are not included in the test.
+            if not para.get("{http://www.w3.org/XML/1998/namespace}lang"):
+                self.flatten_para(para)
+                yield grammarchecker.paragraph_to_testdata(para)
+
     @property
     def paragraphs(self):
         grammarchecker = CorpusGramChecker(self.archive, self.ignore_typos)
@@ -929,12 +909,17 @@ class CorpusGramTest(GramTest):
         for filename in ccat.find_files(self.targets, ".xml"):
             root = etree.parse(filename)
             self.keep_url(root)
-            for para in root.iter("p"):
-                # the xml:lang attribute indicates that the sentence is not the expected
-                # language. These paragraphs are not included in the test.
-                if not para.get("{http://www.w3.org/XML/1998/namespace}lang"):
-                    self.flatten_para(para)
-                    yield grammarchecker.get_data(filename, para)
+            error_datas = list(self.get_error_data(filename, grammarchecker))
+            grammar_datas = grammarchecker.check_paragraphs(
+                "\n".join(error_data[0] for error_data in error_datas)
+            )
+            for item in zip(error_datas, grammar_datas, strict=True):
+                yield grammarchecker.clean_data(
+                    sentence=item[0],
+                    expected_errors=item[1],
+                    gramcheck_errors=item[2],
+                    filename=filename,
+                )
 
 
 class UI(ArgumentParser):
