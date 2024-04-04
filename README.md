@@ -1,6 +1,6 @@
 # GiellaLTGramTools
 
-This repo contains scripts that makes the GiellaLT gramchecker .zcheck file and runs tests.
+This repo contains scripts that creates the GiellaLT gramchecker .zcheck file and runs tests.
 
 Install these tools by running `pipx install https://github.com/giellalt/GiellaLTGramTools`
 
