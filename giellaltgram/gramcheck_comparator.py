@@ -130,7 +130,7 @@ class GramChecker:
             d_errors.remove(removable_error)
 
     @staticmethod
-    def sortByRange(error):
+    def sort_by_range(error):
         return error[1:2]
 
     def add_part(self, part, start, end, d_errors):
@@ -171,7 +171,7 @@ class GramChecker:
         if part2:
             self.add_part(part2, start, end, d_errors)
 
-        d_errors.sort(key=self.sortByRange)
+        d_errors.sort(key=self.sort_by_range)
 
     def fix_aistton_left(self, d_error, d_errors, position):
         sentence = d_error[0][1:]
