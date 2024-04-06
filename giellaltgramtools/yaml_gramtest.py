@@ -14,12 +14,9 @@ from lxml import etree
 from giellaltgramtools.common import (
     COLORS,
 )
-from giellaltgramtools.compactoutput import CompactOutput
-from giellaltgramtools.finaloutput import FinalOutput
 from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.nooutput import NoOutput
 from giellaltgramtools.normaloutput import NormalOutput
-from giellaltgramtools.terseoutput import TerseOutput
 from giellaltgramtools.yaml_gramchecker import YamlGramChecker
 
 
@@ -32,22 +29,14 @@ class YamlGramTest(GramTest):
         "fn2": "GramDivvun did not find manually marked up error",
     }
 
-    def __init__(self, args, filename=None):
+    def __init__(self, args, silent, filename=None):
         super().__init__()
-        self.config = self.load_config(args, filename)
+        self.config = self.load_config(args, silent, filename)
 
-    def load_config(self, args, filename):
+    def load_config(self, args, silent, filename):
         config = {}
 
-        if args.get("silent"):
-            config["out"] = NoOutput(args)
-        else:
-            config["out"] = {
-                "normal": NormalOutput,
-                "terse": TerseOutput,
-                "compact": CompactOutput,
-                "final": FinalOutput,
-            }.get(args.get("output"), lambda x: None)(args)
+        config["out"] = NoOutput(args) if silent else NormalOutput(args)
 
         config["test_file"] = filename
 

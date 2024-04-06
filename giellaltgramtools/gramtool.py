@@ -38,19 +38,6 @@ def main(ctx):
 @main.group()
 @click.option("-c", "--colour", is_flag=True, help="Colours the output")
 @click.option(
-    "-o",
-    "--output",
-    help="""Desired output style (Default: normal)""",
-    default="normal",
-    type=click.Choice(["normal", "compact", "terse", "final"]),
-)
-@click.option(
-    "-q",
-    "--silent",
-    help="Hide all output; exit code only",
-    is_flag=True,
-)
-@click.option(
     "-p",
     "--hide-passes",
     help="Suppresses passes to make finding fails easier",
@@ -69,13 +56,11 @@ def main(ctx):
     help="""Which variant should be used.""",
 )
 @click.pass_context
-def test(ctx, colour, output, silent, hide_passes, spec, variant):  # noqa: PLR0913
+def test(ctx, colour, hide_passes, spec, variant):  # noqa: PLR0913
     """Test the grammars."""
     ctx.ensure_object(dict)
     ctx.obj = {
         "colour": colour,
-        "output": output,
-        "silent": silent,
         "hide_passes": hide_passes,
         "spec": spec,
         "variant": variant,
@@ -84,11 +69,17 @@ def test(ctx, colour, output, silent, hide_passes, spec, variant):  # noqa: PLR0
 
 @test.command()
 @click.argument("yaml_file", type=click.Path(exists=True))
+@click.option(
+    "-q",
+    "--silent",
+    help="Hide all output; exit code only",
+    is_flag=True,
+)
 @click.pass_context
-def yaml(ctx, yaml_file):
+def yaml(ctx, silent, yaml_file):
     """Test a YAML file."""
     try:
-        tester = YamlGramTest(ctx.obj, Path(yaml_file))
+        tester = YamlGramTest(ctx.obj, silent, Path(yaml_file))
         ret = tester.run()
         sys.stdout.write(str(tester))
         sys.exit(ret)
