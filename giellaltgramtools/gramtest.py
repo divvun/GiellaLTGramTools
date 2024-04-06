@@ -62,7 +62,9 @@ class GramTest:
             self.write("-" * 10)
             self.write(f'{colourise("{reset}")}\n')
 
-        def success(self, case, total, type, expected_error, gramcheck_error, filename):
+        def success(
+            self, case, total, type, expected_error, gramcheck_error, filename
+        ):  # noqa: PLR0913
             self.write(filename + "\n")
             errorinfo = f", ({expected_error[4]})"
             x = colourise(
@@ -85,7 +87,9 @@ class GramTest:
             )
             self.write(x)
 
-        def failure(self, case, total, type, expected_error, gramcheck_error, filename):
+        def failure(
+            self, case, total, type, expected_error, gramcheck_error, filename
+        ):  # noqa: PLR0913
             self.write(filename + "\n")
             errorinfo = f", ({expected_error[4]})"
             x = colourise(
