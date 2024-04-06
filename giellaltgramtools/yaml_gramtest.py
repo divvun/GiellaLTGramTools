@@ -11,7 +11,7 @@ import yaml
 from corpustools import errormarkup  # type: ignore
 from lxml import etree
 
-from giellaltgramtools.gramcheck_comparator import (
+from giellaltgramtools.common import (
     COLORS,
 )
 from giellaltgramtools.gramtest import GramTest

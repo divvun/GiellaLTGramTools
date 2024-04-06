@@ -6,7 +6,7 @@
 import sys
 from pathlib import Path
 
-from giellaltgramtools.gramcheck_comparator import get_pipespecs
+from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import GramChecker
 
 

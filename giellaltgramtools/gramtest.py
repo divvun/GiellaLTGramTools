@@ -7,7 +7,7 @@
 from collections import Counter
 from io import StringIO
 
-from giellaltgramtools.gramcheck_comparator import colourise
+from giellaltgramtools.common import colourise
 
 
 class GramTest:
