@@ -77,14 +77,14 @@ class YamlGramTest(GramTest):
         "fn2": "GramDivvun did not find manually marked up error",
     }
 
-    def __init__(self, args):
+    def __init__(self, args, filename=None):
         super().__init__()
-        self.config = self.load_config(args)
+        self.config = self.load_config(args, filename)
 
-    def load_config(self, args):
+    def load_config(self, args, filename):
         config = {}
 
-        if args.silent:
+        if args.get("silent"):
             config["out"] = GramTest.NoOutput(args)
         else:
             config["out"] = {
@@ -93,11 +93,11 @@ class YamlGramTest(GramTest):
                 "compact": GramTest.CompactOutput,
                 "silent": GramTest.NoOutput,
                 "final": GramTest.FinalOutput,
-            }.get(args.output, lambda x: None)(args)
+            }.get(args.get("output"), lambda x: None)(args)
 
-        config["test_file"] = Path(args.test_files[0])
+        config["test_file"] = filename
 
-        if not args.colour:
+        if not args.get("colour"):
             for key in list(COLORS.keys()):
                 COLORS[key] = ""
 
@@ -105,13 +105,13 @@ class YamlGramTest(GramTest):
 
         config["spec"] = (
             config["test_file"].parent / yaml_settings.get("Config").get("Spec")
-            if not args.spec
-            else Path(args.spec)
+            if not args.get("spec")
+            else Path(args.get("spec"))
         )
         config["variants"] = (
             yaml_settings.get("Config").get("Variants")
-            if not args.variant
-            else [args.variant]
+            if not args.get("variant")
+            else [args.get("variant")]
         )
         config["tests"] = yaml_settings.get("Tests", [])
 
@@ -130,20 +130,6 @@ class YamlGramTest(GramTest):
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
-
-        if args.total and len(args.test_files) == 1:
-            notfixed = (
-                config["test_file"].parent / f"{config['test_file'].stem}.notfixed.yaml"
-            )
-            tests = self.yaml_reader(notfixed).get("Tests")
-            if notfixed.is_file() and tests:
-                config["tests"].extend(tests)
-
-        if len(args.test_files) > 1:
-            for test_file in args.test_files[1:]:
-                tests = self.yaml_reader(Path(test_file)).get("Tests")
-                if tests:
-                    config["tests"].extend(tests)
 
         return config
 

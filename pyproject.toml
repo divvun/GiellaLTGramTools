@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "GiellaLTGramTools"
-version = "0.1.0"
+version = "0.2.0"
 description = "Package and test grammar files for the GiellaLT project"
 authors = ["Børre Gaup <albbas@gmail.com>"]
 readme = "README.md"
@@ -10,6 +10,7 @@ python = "^3.11"
 lxml = "^4.9.3"
 pyyaml = "^6.0.1"
 corpustools = {git = "https://github.com/giellalt/CorpusTools"}
+click = "^8.1.7"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -19,9 +20,7 @@ types-lxml = "^2024.2.9"
 types-pyyaml = "^6.0.12.12"
 
 [tool.poetry.scripts]
-gramcheck-yaml= "giellaltgramtools.gramcheck_test:main"
-gramcheck-xml= "giellaltgramtools.gramcheck_comparator:main"
-make_grammarchecker_zip = "giellaltgramtools.make_grammarchecker_zip:main"
+gtgramtool="giellaltgramtools.gramtool:main"
 
 [build-system]
 requires = ["poetry-core"]

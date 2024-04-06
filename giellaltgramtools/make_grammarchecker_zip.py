@@ -4,7 +4,6 @@
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 """Make a grammarchecker zip archive without '-dev' variants"""
-import sys
 from zipfile import ZipFile
 
 from lxml import etree
@@ -30,11 +29,3 @@ def make_archive(specfile, archive_name):
             element.attrib.get("n") for element in pipespec.xpath(".//*[@n]")
         }:
             archive_zip.write(filename)
-
-
-def main():
-    """Make grammarchecker archive without '-dev' variants."""
-    try:
-        make_archive(specfile=sys.argv[1], archive_name=sys.argv[2])
-    except FileNotFoundError as error:
-        print(error, file=sys.stderr)
