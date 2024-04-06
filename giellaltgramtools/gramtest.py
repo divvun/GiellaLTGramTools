@@ -310,7 +310,7 @@ class GramTest:
         return (
             len(d_error[5]) > 0
             and self.has_same_range_and_error(c_error, d_error)
-            and any([correct in d_error[5] for correct in c_error[5]])
+            and any(correct in d_error[5] for correct in c_error[5])
         )
 
     def has_true_negatives(self, correct, dc):
@@ -339,7 +339,7 @@ class GramTest:
         return (
             self.has_same_range_and_error(c_error, d_error)
             and d_error[5]
-            and not any([correct in d_error[5] for correct in c_error[5]])
+            and not any(correct in d_error[5] for correct in c_error[5])
         )
 
     def has_false_positives_2(self, correct, dc):
