@@ -39,7 +39,7 @@ class YamlGramChecker(GramChecker):
             return f"--variant {default_pipe}"
 
         variants = {
-            variant.replace("-dev", "") if spec_file.suffix == ".zhfst" else variant
+            variant.replace("-dev", "") if spec_file.suffix == ".zcheck" else variant
             for variant in self.config.get("variants")
         }
         for variant in variants:
