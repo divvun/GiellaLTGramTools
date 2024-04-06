@@ -43,7 +43,7 @@ class CorpusGramTest(GramTest):
         for child in para:
             self.flatten_para(child)
 
-    def keep_url(self, root):
+    def keep_url(self, root):  # noqa: PLR0912, C901
         """Keep url as plain text."""
         for url in root.xpath('.//errorlang[@correct="url"]'):
             parent = url.getparent()
