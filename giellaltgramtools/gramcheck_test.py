@@ -15,7 +15,6 @@ from lxml import etree
 
 from giellaltgramtools.gramcheck_comparator import (
     COLORS,
-    UI,
     GramChecker,
     GramTest,
     get_pipespecs,
@@ -210,73 +209,3 @@ class YamlGramTest(GramTest):
         self.move_passes_from_fail()
 
         return failed_or_not
-
-
-class YamlUI(UI):
-    def __init__(self):
-        super().__init__()
-
-        self.description = "Test errormarkuped up sentences"
-        self.add_argument(
-            "-o",
-            "--output",
-            choices=["normal", "compact", "terse", "final"],
-            dest="output",
-            default="normal",
-            help="""Desired output style (Default: normal)""",
-        )
-        self.add_argument(
-            "-q",
-            "--silent",
-            dest="silent",
-            action="store_true",
-            help="Hide all output; exit code only",
-        )
-        self.add_argument(
-            "-p",
-            "--hide-passes",
-            dest="hide_pass",
-            action="store_true",
-            help="Suppresses passes to make finding fails easier",
-        )
-        self.add_argument(
-            "-s",
-            "--spec",
-            dest="spec",
-            required=False,
-            help="""Path to the pipeline.xml spec file. Usefull when doing out
-            of tree builds""",
-        )
-        self.add_argument(
-            "-V",
-            "--variant",
-            dest="variant",
-            required=False,
-            help="""Which variant should be used.""",
-        )
-        self.add_argument(
-            "-t",
-            "--total",
-            dest="total",
-            action="store_true",
-            required=False,
-            help="""Merge tests from x.yaml and x.notfixed.yaml""",
-        )
-        self.add_argument(
-            "-v",
-            "--verbose",
-            dest="verbose",
-            action="store_true",
-            help="More verbose output.",
-        )
-        self.add_argument("test_files", nargs="+", help="YAML files with test rules")
-
-        self.test = YamlGramTest(self.parse_args())
-
-
-def main():
-    try:
-        ui = YamlUI()
-        ui.start()
-    except KeyboardInterrupt:
-        sys.exit(130)
