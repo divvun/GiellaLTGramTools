@@ -14,7 +14,12 @@ from lxml import etree
 from giellaltgramtools.common import (
     COLORS,
 )
+from giellaltgramtools.compactoutput import CompactOutput
+from giellaltgramtools.finaloutput import FinalOutput
 from giellaltgramtools.gramtest import GramTest
+from giellaltgramtools.nooutput import NoOutput
+from giellaltgramtools.normaloutput import NormalOutput
+from giellaltgramtools.terseoutput import TerseOutput
 from giellaltgramtools.yaml_gramchecker import YamlGramChecker
 
 
@@ -35,14 +40,13 @@ class YamlGramTest(GramTest):
         config = {}
 
         if args.get("silent"):
-            config["out"] = GramTest.NoOutput(args)
+            config["out"] = NoOutput(args)
         else:
             config["out"] = {
-                "normal": GramTest.NormalOutput,
-                "terse": GramTest.TerseOutput,
-                "compact": GramTest.CompactOutput,
-                "silent": GramTest.NoOutput,
-                "final": GramTest.FinalOutput,
+                "normal": NormalOutput,
+                "terse": TerseOutput,
+                "compact": CompactOutput,
+                "final": FinalOutput,
             }.get(args.get("output"), lambda x: None)(args)
 
         config["test_file"] = filename
