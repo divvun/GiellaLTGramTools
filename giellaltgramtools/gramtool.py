@@ -28,7 +28,9 @@ from giellaltgramtools.make_grammarchecker_zip import make_archive
 
 
 @click.group()
-def main():
+@click.version_option()
+@click.pass_context
+def main(ctx):
     """Tool for working with GiellaLT grammars."""
     pass
 
