@@ -23,8 +23,8 @@ from pathlib import Path
 
 import click
 
-from giellaltgramtools.gramcheck_test import YamlGramTest
 from giellaltgramtools.make_grammarchecker_zip import make_archive
+from giellaltgramtools.yaml_gramtest import YamlGramTest
 
 
 @click.group()
@@ -69,7 +69,7 @@ def main(ctx):
     help="""Which variant should be used.""",
 )
 @click.pass_context
-def test(ctx, colour, output, silent, hide_passes, spec, variant):
+def test(ctx, colour, output, silent, hide_passes, spec, variant):  # noqa: PLR0913
     """Test the grammars."""
     ctx.ensure_object(dict)
     ctx.obj = {
