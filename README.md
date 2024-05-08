@@ -2,7 +2,7 @@
 
 This repo contains scripts that creates the GiellaLT gramchecker .zcheck file and runs tests.
 
-Install these tools by running `pipx install -f https://github.com/divvun/GiellaLTGramTools`
+Install these tools by running `pipx install -f git+https://github.com/divvun/GiellaLTGramTools`
 
 ## Runtime dependency
 
