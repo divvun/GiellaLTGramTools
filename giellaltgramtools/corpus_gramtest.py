@@ -4,25 +4,26 @@
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 
-from curses import COLORS
 
 from corpustools import ccat  # type: ignore
 from lxml import etree
 
+from giellaltgramtools.common import COLORS
 from giellaltgramtools.corpus_gramchecker import CorpusGramChecker
 from giellaltgramtools.gramtest import GramTest
+from giellaltgramtools.normaloutput import NormalOutput
 
 
 class CorpusGramTest(GramTest):
-    def __init__(self, args):
+    def __init__(self, args, ignore_typos, targets):
         super().__init__()
-        self.ignore_typos = args.ignore_typos
-        self.archive = args.archive
-        self.targets = args.targets
-        self.config = {"out": GramTest.NormalOutput(args)}
-        if not args.colour:
+        self.archive = args.get("spec")
+        if not args.get("colour"):
             for key in list(COLORS.keys()):
                 COLORS[key] = ""
+        self.ignore_typos = ignore_typos
+        self.targets = targets
+        self.config = {"out": NormalOutput(args)}
 
     def flatten_para(self, para):
         """Convert non-error xml elements into plain text."""
@@ -92,12 +93,12 @@ class CorpusGramTest(GramTest):
             self.keep_url(root)
             error_datas = list(self.get_error_data(filename, grammarchecker))
             grammar_datas = grammarchecker.check_paragraphs(
-                "\n".join(error_data[0] for error_data in error_datas)
+                "\n".join(error_data[0].rstrip() for error_data in error_datas)
             )
             for item in zip(error_datas, grammar_datas, strict=True):
                 yield grammarchecker.clean_data(
-                    sentence=item[0],
-                    expected_errors=item[1],
-                    gramcheck_errors=item[2],
+                    sentence=item[0][0],
+                    expected_errors=item[0][1],
+                    gramcheck_errors=item[1],
                     filename=filename,
                 )

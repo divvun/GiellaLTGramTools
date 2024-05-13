@@ -23,6 +23,7 @@ from pathlib import Path
 
 import click
 
+from giellaltgramtools.corpus_gramtest import CorpusGramTest
 from giellaltgramtools.make_grammarchecker_zip import make_archive
 from giellaltgramtools.yaml_gramtest import YamlGramTest
 
@@ -46,8 +47,8 @@ def main(ctx):
 @click.option(
     "-s",
     "--spec",
-    help="""Path to the pipeline.xml spec file. Usefull when doing out
-    of tree builds""",
+    help="""Path to the pipeline.xml spec or .zcheck file. Necessary argument for the 
+    xml command, useful for the yaml command when doing out of tree builds.""",
     type=click.Path(exists=True),
 )
 @click.option(
@@ -88,9 +89,24 @@ def yaml(ctx, silent, yaml_file):
 
 
 @test.command()
-def xml():
+@click.argument("targets", type=click.Path(exists=True), nargs=-1)
+@click.option(
+    "-t",
+    "--count_typos",
+    help="Also count typos as errors",
+    default=True,
+    is_flag=True,
+)
+@click.pass_context
+def xml(ctx, count_typos, targets):
     """Test XML files."""
-    pass
+    try:
+        tester = CorpusGramTest(ctx.obj, count_typos, targets)
+        ret = tester.run()
+        sys.stdout.write(str(tester))
+        sys.exit(ret)
+    except KeyboardInterrupt:
+        sys.exit(130)
 
 
 @main.command()
