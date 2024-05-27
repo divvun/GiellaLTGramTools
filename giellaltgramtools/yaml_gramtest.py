@@ -36,6 +36,7 @@ class YamlGramTest(GramTest):
     def load_config(self, args, silent, filename):
         config = {}
 
+        config["hide_passes"] = args.get("hide_passes", False)
         config["out"] = NoOutput(args) if silent else NormalOutput(args)
 
         config["test_file"] = filename
