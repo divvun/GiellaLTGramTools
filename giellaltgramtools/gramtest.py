@@ -106,7 +106,7 @@ class GramTest:
             self.count[key] += count[key]
 
         # Did this test sentence as a whole pass or not
-        return all(key.startswith("t") for key in count.keys())
+        return not has_fails
 
     def has_same_range_and_error(self, c_error, d_error):
         """Check if the errors have the same range and error"""
@@ -186,7 +186,7 @@ class GramTest:
     def run(self):
         self.run_tests()
 
-        return 1 if any(key.startswith("f") for key in self.count) else 0
+        return 0 if all(self.test_results) else 1
 
     def __str__(self):
         return str(self.config.get("out"))
