@@ -12,16 +12,16 @@ class GramTest:
     def __init__(self):
         self.count = Counter()
 
-    def run_tests(self):
+    def make_test_report(self):
         test_results = self.tests
         self.test_outcomes = [
-            self.run_test(test_number, test_result, len(test_results))
+            self.per_test_report(test_number, test_result, len(test_results))
             for (test_number, test_result) in enumerate(test_results, start=1)
         ]
 
         self.config.get("out").final_result(self.count)
 
-    def run_test(self, test_number, test_result, length):
+    def per_test_report(self, test_number, test_result, length):
         count = Counter()
 
         true_positives = self.has_true_positives(
@@ -205,7 +205,7 @@ class GramTest:
         return self.has_same_range_and_error(c_error, d_error) and not d_error[5]
 
     def run(self):
-        self.run_tests()
+        self.make_test_report()
 
         return 0 if all(self.test_outcomes) else 1
 
