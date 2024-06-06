@@ -14,7 +14,7 @@ class GramTest:
 
     def run_tests(self):
         test_results = self.tests
-        self.test_results = [
+        self.test_outcomes = [
             self.run_test(test_number, test_result, len(test_results))
             for (test_number, test_result) in enumerate(test_results, start=1)
         ]
@@ -207,7 +207,7 @@ class GramTest:
     def run(self):
         self.run_tests()
 
-        return 0 if all(self.test_results) else 1
+        return 0 if all(self.test_outcomes) else 1
 
     def __str__(self):
         return str(self.config.get("out"))

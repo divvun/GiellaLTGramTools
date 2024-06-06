@@ -118,10 +118,10 @@ class YamlGramTest(GramTest):
         )
 
     def move_passes_from_fail(self):
-        if "FAIL" in self.config["test_file"].name and any(self.test_results):
+        if "FAIL" in self.config["test_file"].name and any(self.test_outcomes):
             passing_tests = [
                 self.config["tests"][index]
-                for (index, test_result) in enumerate(self.test_results)
+                for (index, test_result) in enumerate(self.test_outcomes)
                 if test_result
             ]
 
