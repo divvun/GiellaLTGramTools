@@ -92,8 +92,7 @@ class YamlGramTest(GramTest):
             print(text, "is not a string")
         return para
 
-    @property
-    def paragraphs(self):
+    def make_test_results(self):
         if not self.config["tests"]:
             return []
 

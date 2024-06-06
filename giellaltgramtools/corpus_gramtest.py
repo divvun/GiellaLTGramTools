@@ -84,8 +84,7 @@ class CorpusGramTest(GramTest):
                 self.flatten_para(para)
                 yield grammarchecker.paragraph_to_testdata(para)
 
-    @property
-    def paragraphs(self):
+    def make_test_results(self):
         grammarchecker = CorpusGramChecker(self.archive, self.ignore_typos)
 
         for filename in ccat.find_files(self.targets, ".xml"):

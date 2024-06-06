@@ -13,7 +13,7 @@ class GramTest:
         self.count = Counter()
 
     def make_test_report(self):
-        test_results = self.tests
+        test_results = list(self.make_test_results())
         self.test_outcomes = [
             self.per_test_report(test_number, test_result, len(test_results))
             for (test_number, test_result) in enumerate(test_results, start=1)
@@ -212,6 +212,5 @@ class GramTest:
     def __str__(self):
         return str(self.config.get("out"))
 
-    @property
-    def tests(self):
-        return list(self.paragraphs)
+    def make_test_results(self):
+        raise NotImplementedError
