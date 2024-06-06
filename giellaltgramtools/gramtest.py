@@ -193,4 +193,4 @@ class GramTest:
 
     @property
     def tests(self):
-        return {test["uncorrected"]: test for test in self.paragraphs}
+        return list(self.paragraphs)
