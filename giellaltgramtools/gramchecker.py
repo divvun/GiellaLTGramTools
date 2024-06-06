@@ -94,8 +94,7 @@ class GramChecker:
         d_error[5] = ["”"]
         d_error[2] = d_error[1] + 1
 
-        res = self.check_grammar(sentence)
-        new_d_error = res["errs"]
+        new_d_error = self.check_paragraphs(sentence)[0]
         if new_d_error:
             new_d_error[0][1] = d_error[1] + 1
             new_d_error[0][2] = d_error[1] + 1 + len(sentence)
@@ -107,8 +106,7 @@ class GramChecker:
         d_error[5] = ["”"]
         d_error[1] = d_error[2] - 1
 
-        res = self.check_grammar(sentence)
-        new_d_error = res["errs"]
+        new_d_error = self.check_paragraphs(sentence)[0]
         if new_d_error:
             new_d_error[0][1] = d_error[1] - len(sentence)
             new_d_error[0][2] = d_error[1]

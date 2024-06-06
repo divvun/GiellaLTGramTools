@@ -34,9 +34,9 @@ class NormalOutput(AllOutput):
             expectected_type=f"{expected_error.explanation}{errorinfo}",
             case=case,
             total=total,
-            gramerr=gramcheck_error[0],
-            errlist=f'[{", ".join(gramcheck_error[5])}]',
-            gram_type=gramcheck_error[3],
+            gramerr=gramcheck_error.error_string,
+            errlist=f'[{", ".join(gramcheck_error.suggestions)}]',
+            gram_type=gramcheck_error.explanation,
         )
         self.write(x)
 
@@ -58,9 +58,9 @@ class NormalOutput(AllOutput):
             expectected_type=f"{expected_error.explanation}{errorinfo}",
             case=case,
             total=total,
-            gramerr=gramcheck_error[0],
-            errlist=f'[{", ".join(gramcheck_error[5])}]',
-            gram_type=gramcheck_error[3],
+            gramerr=gramcheck_error.error_string,
+            errlist=f'[{", ".join(gramcheck_error.suggestions)}]',
+            gram_type=gramcheck_error.explanation,
         )
         self.write(x)
 
