@@ -290,15 +290,6 @@ class GramChecker:
                 error[2] = error[1] + 3
                 error[0] = error[0][error[1] : error[2]]
 
-    def remove_non_hits(self, errors, d_errors):
-        """Find the d_errors that correspond with errors."""
-        return [
-            d_error
-            for error in errors
-            for d_error in d_errors
-            if d_error[1:2] == error[1:2]
-        ]
-
     @staticmethod
     def error_markup_needs_normalisation(error: ErrorData) -> bool:
         return (
