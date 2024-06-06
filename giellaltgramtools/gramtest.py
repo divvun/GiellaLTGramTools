@@ -13,37 +13,39 @@ class GramTest:
         self.count = Counter()
 
     def run_tests(self):
-        tests = self.tests
+        test_results = self.tests
         self.test_results = [
-            self.run_test(item, len(tests))
-            for item in enumerate(tests.items(), start=1)
+            self.run_test(test_number, test_result, len(test_results))
+            for (test_number, test_result) in enumerate(test_results, start=1)
         ]
 
         self.config.get("out").final_result(self.count)
 
-    def run_test(self, item, length):
+    def run_test(self, test_number, test_result, length):
         count = Counter()
-        expected_errors = item[1][1]["expected_errors"]
-        gramcheck_errors = item[1][1]["gramcheck_errors"]
 
-        true_positives = self.has_true_positives(expected_errors, gramcheck_errors)
+        true_positives = self.has_true_positives(
+            test_result["expected_errors"], test_result["gramcheck_errors"]
+        )
         count["tp"] = len(true_positives)
-        true_negatives = self.has_true_negatives(expected_errors, gramcheck_errors)
+        true_negatives = self.has_true_negatives(
+            test_result["expected_errors"], test_result["gramcheck_errors"]
+        )
         count["tn"] = len(true_negatives)
         false_positives_1 = self.has_false_positives_1(
-            expected_errors, gramcheck_errors
+            test_result["expected_errors"], test_result["gramcheck_errors"]
         )
         count["fp1"] = len(false_positives_1)
         false_positives_2 = self.has_false_positives_2(
-            expected_errors, gramcheck_errors
+            test_result["expected_errors"], test_result["gramcheck_errors"]
         )
         count["fp2"] = len(false_positives_2)
         false_negatives_1 = self.has_false_negatives_1(
-            expected_errors, gramcheck_errors
+            test_result["expected_errors"], test_result["gramcheck_errors"]
         )
         count["fn1"] = len(false_negatives_1)
         false_negatives_2 = self.has_false_negatives_2(
-            expected_errors, gramcheck_errors
+            test_result["expected_errors"], test_result["gramcheck_errors"]
         )
         count["fn2"] = len(false_negatives_2)
 
@@ -51,56 +53,75 @@ class GramTest:
             [false_negatives_1, false_negatives_2, false_positives_1, false_positives_2]
         )
         out = self.config.get("out")
-        filename = item[1][1]["filename"]
 
         if not (self.config.get("hide_passes", False) and not has_fails):
-            out.title(item[0], length, item[1][0])
+            out.title(test_number, length, test_result["uncorrected"])
 
         if not self.config.get("hide_passes", False):
             for true_positive in true_positives:
                 out.success(
-                    item[0], length, "tp", true_positive[0], true_positive[1], filename
+                    test_number,
+                    length,
+                    "tp",
+                    true_positive[0],
+                    true_positive[1],
+                    test_result["filename"],
                 )
 
             for true_negative in true_negatives:
                 out.success(
-                    item[0], length, "tn", true_negative[0], true_negative[1], filename
+                    test_number,
+                    length,
+                    "tn",
+                    true_negative[0],
+                    true_negative[1],
+                    test_result["filename"],
                 )
 
         for false_positive_1 in false_positives_1:
             out.failure(
-                item[0],
+                test_number,
                 length,
                 "fp1",
                 false_positive_1[0],
                 false_positive_1[1],
-                filename,
+                test_result["filename"],
             )
 
         expected_error = ["", "", "", "", "", ""]
         for false_positive_2 in false_positives_2:
             out.failure(
-                item[0], length, "fp2", expected_error, false_positive_2, filename
+                test_number,
+                length,
+                "fp2",
+                expected_error,
+                false_positive_2,
+                test_result["filename"],
             )
 
         for false_negative_1 in false_negatives_1:
             out.failure(
-                item[0],
+                test_number,
                 length,
                 "fn1",
                 false_negative_1[0],
                 false_negative_1[1],
-                filename,
+                test_result["filename"],
             )
 
         gramcheck_error = ["", "", "", "", "", []]
         for false_negative_2 in false_negatives_2:
             out.failure(
-                item[0], length, "fn2", false_negative_2, gramcheck_error, filename
+                test_number,
+                length,
+                "fn2",
+                false_negative_2,
+                gramcheck_error,
+                test_result["filename"],
             )
 
         if not (self.config.get("hide_passes", False) and not has_fails):
-            out.result(item[0], count, item[1][0])
+            out.result(test_number, count, test_result["uncorrected"])
 
         for key in count:
             self.count[key] += count[key]
