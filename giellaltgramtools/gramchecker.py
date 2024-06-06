@@ -29,7 +29,8 @@ class GramChecker:
 
         lines = result.stdout.decode("utf-8").strip().split("\n")
         return [
-            gram_error.get("errs") for gram_error in json.loads(f"[{','.join(lines)}]")
+            self.fix_all_errors(gram_error.get("errs"))
+            for gram_error in json.loads(f"[{','.join(lines)}]")
         ]
 
     @staticmethod
@@ -264,11 +265,6 @@ class GramChecker:
         report_dupes(d_errors)
 
         return d_errors
-
-    def check_sentence(self, sentence):
-        res = self.check_grammar(sentence)
-
-        return self.fix_all_errors(res["errs"])
 
     def normalise_error_markup(self, error: ErrorData) -> ErrorData:
 
