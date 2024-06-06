@@ -19,7 +19,7 @@ class NormalOutput(AllOutput):
         self, case, total, error_type, expected_error, gramcheck_error, filename
     ):
         self.write(filename + "\n")
-        errorinfo = f", ({expected_error[4]})"
+        errorinfo = f", ({expected_error.explanation})"
         x = colourise(
             (
                 "[{light_blue}{case:>%d}/{total}{reset}]"
@@ -29,9 +29,9 @@ class NormalOutput(AllOutput):
             )
             % len(str(total)),
             type=error_type,
-            error=expected_error[0],
-            correction=", ".join(expected_error[5]),
-            expectected_type=f"{expected_error[4]}{errorinfo}",
+            error=expected_error.error_string,
+            correction=", ".join(expected_error.suggestions),
+            expectected_type=f"{expected_error.explanation}{errorinfo}",
             case=case,
             total=total,
             gramerr=gramcheck_error[0],
@@ -44,7 +44,7 @@ class NormalOutput(AllOutput):
         self, case, total, error_type, expected_error, gramcheck_error, filename
     ):
         self.write(filename + "\n")
-        errorinfo = f", ({expected_error[4]})"
+        errorinfo = f", ({expected_error.explanation})"
         x = colourise(
             (
                 "[{light_blue}{case:>%d}/{total}{reset}][{red}FAIL {type}"
@@ -53,9 +53,9 @@ class NormalOutput(AllOutput):
             )
             % len(str(total)),
             type=error_type,
-            error=expected_error[0],
-            correction=", ".join(expected_error[5]),
-            expectected_type=f"{expected_error[4]}{errorinfo}",
+            error=expected_error.error_string,
+            correction=", ".join(expected_error.suggestions),
+            expectected_type=f"{expected_error.explanation}{errorinfo}",
             case=case,
             total=total,
             gramerr=gramcheck_error[0],

@@ -6,6 +6,11 @@
 
 import json
 import subprocess
+from dataclasses import replace
+
+from lxml.etree import _Element
+
+from giellaltgramtools.errordata import ErrorData
 
 
 class GramChecker:
@@ -185,19 +190,32 @@ class GramChecker:
         """Check if the only children are correct elements."""
         return all(child.tag == "correct" for child in para)
 
-    def extract_error_info(self, parts, errors, para):
+    def extract_error_info(
+        self, parts: list[str], errors: list[ErrorData | None], para: _Element
+    ) -> ErrorData | None:
         """Only collect unnested errors."""
-        info = ["", "", "", "", "", ""]
+        info = None
+
         if para.tag.startswith("error"):
-            info[0] = self.get_error_corrections(para) if len(para) else para.text
-            info[1] = len("".join(parts))
-            info[3] = para.tag
             correct = para.find("./correct")
-            info[4] = correct.attrib.get("errorinfo", default="")
-            info[5] = [
-                correct.text if correct.text is not None else ""
-                for correct in para.xpath("./correct")
-            ]
+            info = ErrorData(
+                error_string=(
+                    self.get_error_corrections(para) if len(para) else para.text
+                ),
+                start=len("".join(parts)),
+                end=None,
+                error_type=para.tag,
+                explanation=(
+                    correct.attrib.get("errorinfo", default="")
+                    if correct is not None
+                    else ""
+                ),
+                suggestions=[
+                    correct.text if correct.text is not None else ""
+                    for correct in para.xpath("./correct")
+                ],
+                native_error_type=para.tag,
+            )
 
         if para.text:
             parts.append(para.text)
@@ -209,8 +227,8 @@ class GramChecker:
                 else:
                     self.extract_error_info(parts, errors, child)
 
-        if para.tag.startswith("error"):
-            info[2] = len("".join(parts))
+        if info is not None and para.tag.startswith("error"):
+            info.end = len("".join(parts))
 
         if para.tail:
             parts.append(para.tail)
@@ -252,17 +270,17 @@ class GramChecker:
 
         return self.fix_all_errors(res["errs"])
 
-    def normalise_error_markup(self, errors):
-        for error in errors:
-            if (
-                error[3] == "errorformat"
-                and error[4] == "notspace"
-                and "  " in error[0]
-            ):
-                d_pos = error[0].find("  ")
-                error[1] = error[1] + d_pos
-                error[2] = error[1] + 3
-                error[0] = error[0][error[1] : error[2]]
+    def normalise_error_markup(self, error: ErrorData) -> ErrorData:
+
+        d_pos = error.error_string.find("  ")
+        start = error.start + d_pos
+        end = error.start + 3
+        return replace(
+            error,
+            start=start,
+            end=end,
+            error_string=error.error_string[start:end],
+        )
 
     def normalise_grammar_markup(self, errors):
         for error in errors:
@@ -281,29 +299,44 @@ class GramChecker:
             if d_error[1:2] == error[1:2]
         ]
 
-    def paragraph_to_testdata(self, para):
+    @staticmethod
+    def error_markup_needs_normalisation(error: ErrorData) -> bool:
+        return (
+            error.error_type == "errorformat"
+            and error.explanation == "notspace"
+            and "  " in error.error_string
+        )
+
+    def paragraph_to_testdata(self, para: _Element) -> tuple[str, list[ErrorData]]:
         """Extract sentence and markup errors."""
-        parts = []
-        errors = []
+        parts: list[str] = []
+        errors: list[ErrorData | None] = []
         self.extract_error_info(parts, errors, para)
-        self.normalise_error_markup(errors)
 
         sentence = "".join(parts)
 
-        return sentence, errors
+        return sentence, [
+            (
+                self.normalise_error_markup(error)
+                if self.error_markup_needs_normalisation(error)
+                else error
+            )
+            for error in errors
+            if error is not None
+        ]
 
     def remove_foreign(self, marked_errors, found_errors):
         """Remove foreign language error elements."""
         foreign_ranges = [
-            (marked_error[1], marked_error[2])
+            (marked_error.start, marked_error.end)
             for marked_error in marked_errors
-            if marked_error[3] == "errorlang"
+            if marked_error.error_type == "errorlang"
         ]
         return (
             [
                 marked_error
                 for marked_error in marked_errors
-                if marked_error[3] != "errorlang"
+                if marked_error.error_type != "errorlang"
             ],
             [
                 found_error

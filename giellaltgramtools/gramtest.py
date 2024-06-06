@@ -6,6 +6,8 @@
 
 from collections import Counter
 
+from giellaltgramtools.errordata import ErrorData
+
 
 class GramTest:
 
@@ -88,7 +90,15 @@ class GramTest:
                 test_result["filename"],
             )
 
-        expected_error = ["", "", "", "", "", ""]
+        expected_error = ErrorData(
+            error_string="",
+            start=0,
+            end=0,
+            error_type="",
+            explanation="",
+            suggestions=[],
+            native_error_type="",
+        )
         for false_positive_2 in false_positives_2:
             out.failure(
                 test_number,
@@ -129,24 +139,37 @@ class GramTest:
         # Did this test sentence as a whole pass or not
         return not has_fails
 
-    def has_same_range_and_error(self, c_error, d_error):
+    def has_same_range_and_error(self, c_error: ErrorData, d_error: list):
         """Check if the errors have the same range and error"""
         if d_error[3] == "double-space-before":
-            return c_error[1:2] == d_error[1:2]
+            return [c_error.start, c_error.end] == d_error[1:2]
         else:
-            return c_error[:3] == d_error[:3]
+            return [c_error.error_string, c_error.start, c_error.end] == d_error[:3]
 
-    def has_suggestions_with_hit(self, c_error, d_error):
+    def has_suggestions_with_hit(self, c_error: ErrorData, d_error: list):
         """Check if markup error correction exists in grammarchecker error."""
         return (
             len(d_error[5]) > 0
             and self.has_same_range_and_error(c_error, d_error)
-            and any(correct in d_error[5] for correct in c_error[5])
+            and any(correct in d_error[5] for correct in c_error.suggestions)
         )
 
     def has_true_negatives(self, correct, dc):
         if not correct and not dc:
-            return [(["", "", "", "", "", ""], ["", "", "", "", "", ""])]
+            return [
+                (
+                    ErrorData(
+                        error_string="",
+                        start=0,
+                        end=0,
+                        error_type="",
+                        explanation="",
+                        suggestions=[],
+                        native_error_type="",
+                    ),
+                    ["", "", "", "", "", ""],
+                )
+            ]
 
         return []
 
@@ -166,11 +189,11 @@ class GramTest:
             if self.has_suggestions_without_hit(c_error, d_error)
         ]
 
-    def has_suggestions_without_hit(self, c_error, d_error):
+    def has_suggestions_without_hit(self, c_error: ErrorData, d_error: list):
         return (
             self.has_same_range_and_error(c_error, d_error)
             and d_error[5]
-            and not any(correct in d_error[5] for correct in c_error[5])
+            and not any(correct in d_error[5] for correct in c_error.suggestions)
         )
 
     def has_false_positives_2(self, correct, dc):

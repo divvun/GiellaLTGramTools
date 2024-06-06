@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 from corpustools import errormarkup  # type: ignore
-from lxml import etree
+from lxml.etree import Element, _Element
 
 from giellaltgramtools.common import (
     COLORS,
@@ -82,8 +82,8 @@ class YamlGramTest(GramTest):
         with test_file.open() as test_file:
             return yaml.load(test_file, Loader=yaml.FullLoader)
 
-    def make_error_markup(self, text):
-        para = etree.Element("p")
+    def make_error_markup(self, text: str) -> _Element:
+        para: _Element = Element("p")
         try:
             para.text = text
             errormarkup.convert_to_errormarkupxml(para)
