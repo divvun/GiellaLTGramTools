@@ -7,6 +7,7 @@
 from collections import Counter
 
 from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.testdata import TestData
 
 
 class GramTest:
@@ -16,7 +17,7 @@ class GramTest:
         self.config = None
 
     def make_test_report(self) -> None:
-        test_results = list(self.make_test_results())
+        test_results: list[TestData] = list(self.make_test_results())
         self.test_outcomes: list[bool] = [
             self.per_test_report(test_number, test_result, len(test_results))
             for (test_number, test_result) in enumerate(test_results, start=1)
@@ -24,31 +25,33 @@ class GramTest:
 
         self.config.get("out").final_result(self.count)
 
-    def per_test_report(self, test_number, test_result, length) -> bool:
+    def per_test_report(
+        self, test_number: int, test_result: TestData, length: int
+    ) -> bool:
         count: dict[str, int] = Counter()
 
         true_positives = self.has_true_positives(
-            test_result["expected_errors"], test_result["gramcheck_errors"]
+            test_result.expected_errors, test_result.gramcheck_errors
         )
         count["tp"] = len(true_positives)
         true_negatives = self.has_true_negatives(
-            test_result["expected_errors"], test_result["gramcheck_errors"]
+            test_result.expected_errors, test_result.gramcheck_errors
         )
         count["tn"] = len(true_negatives)
         false_positives_1 = self.has_false_positives_1(
-            test_result["expected_errors"], test_result["gramcheck_errors"]
+            test_result.expected_errors, test_result.gramcheck_errors
         )
         count["fp1"] = len(false_positives_1)
         false_positives_2 = self.has_false_positives_2(
-            test_result["expected_errors"], test_result["gramcheck_errors"]
+            test_result.expected_errors, test_result.gramcheck_errors
         )
         count["fp2"] = len(false_positives_2)
         false_negatives_1 = self.has_false_negatives_1(
-            test_result["expected_errors"], test_result["gramcheck_errors"]
+            test_result.expected_errors, test_result.gramcheck_errors
         )
         count["fn1"] = len(false_negatives_1)
         false_negatives_2 = self.has_false_negatives_2(
-            test_result["expected_errors"], test_result["gramcheck_errors"]
+            test_result.expected_errors, test_result.gramcheck_errors
         )
         count["fn2"] = len(false_negatives_2)
 
@@ -58,7 +61,7 @@ class GramTest:
         out = self.config.get("out")
 
         if not (self.config.get("hide_passes", False) and not has_fails):
-            out.title(test_number, length, test_result["uncorrected"])
+            out.title(test_number, length, test_result.uncorrected)
 
         if not self.config.get("hide_passes", False):
             for true_positive in true_positives:
@@ -68,7 +71,7 @@ class GramTest:
                     "tp",
                     true_positive[0],
                     true_positive[1],
-                    test_result["filename"],
+                    test_result.filename,
                 )
 
             for true_negative in true_negatives:
@@ -78,7 +81,7 @@ class GramTest:
                     "tn",
                     true_negative[0],
                     true_negative[1],
-                    test_result["filename"],
+                    test_result.filename,
                 )
 
         for false_positive_1 in false_positives_1:
@@ -88,7 +91,7 @@ class GramTest:
                 "fp1",
                 false_positive_1[0],
                 false_positive_1[1],
-                test_result["filename"],
+                test_result.filename,
             )
 
         expected_error = ErrorData(
@@ -107,7 +110,7 @@ class GramTest:
                 "fp2",
                 expected_error,
                 false_positive_2,
-                test_result["filename"],
+                test_result.filename,
             )
 
         for false_negative_1 in false_negatives_1:
@@ -117,7 +120,7 @@ class GramTest:
                 "fn1",
                 false_negative_1[0],
                 false_negative_1[1],
-                test_result["filename"],
+                test_result.filename,
             )
 
         gramcheck_error = ErrorData(
@@ -136,11 +139,11 @@ class GramTest:
                 "fn2",
                 false_negative_2,
                 gramcheck_error,
-                test_result["filename"],
+                test_result.filename,
             )
 
         if not (self.config.get("hide_passes", False) and not has_fails):
-            out.result(test_number, count, test_result["uncorrected"])
+            out.result(test_number, count, test_result.uncorrected)
 
         for key in count:
             self.count[key] += count[key]

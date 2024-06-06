@@ -6,6 +6,7 @@
 import sys
 from io import StringIO
 from pathlib import Path
+from typing import Iterable
 
 import yaml
 from corpustools import errormarkup  # type: ignore
@@ -17,6 +18,7 @@ from giellaltgramtools.common import (
 from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.nooutput import NoOutput
 from giellaltgramtools.normaloutput import NormalOutput
+from giellaltgramtools.testdata import TestData
 from giellaltgramtools.yaml_gramchecker import YamlGramChecker
 
 
@@ -92,7 +94,7 @@ class YamlGramTest(GramTest):
             print(text, "is not a string")
         return para
 
-    def make_test_results(self):
+    def make_test_results(self) -> Iterable[TestData]:
         if not self.config["tests"]:
             return []
 
@@ -116,7 +118,7 @@ class YamlGramTest(GramTest):
             for item in zip(error_datas, grammar_datas, strict=True)
         )
 
-    def move_passes_from_fail(self):
+    def move_passes_from_fail(self) -> None:
         if "FAIL" in self.config["test_file"].name and any(self.test_outcomes):
             passing_tests = [
                 self.config["tests"][index]
@@ -147,7 +149,7 @@ class YamlGramTest(GramTest):
                     )
                 self.config["test_file"].open("w").write(temp_stream.getvalue())
 
-    def run(self):
+    def run(self) -> int:
         failed_or_not = super().run()
 
         self.move_passes_from_fail()

@@ -11,6 +11,7 @@ from dataclasses import replace
 from lxml.etree import _Element
 
 from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.testdata import TestData
 
 
 class GramChecker:
@@ -347,7 +348,13 @@ class GramChecker:
             [found_error for found_error in found_errors if found_error[3] != "typo"],
         )
 
-    def clean_data(self, sentence, expected_errors, gramcheck_errors, filename):
+    def clean_data(
+        self,
+        sentence: str,
+        expected_errors: list[ErrorData],
+        gramcheck_errors: list,
+        filename: str,
+    ) -> TestData:
         """Extract data for reporting from a paragraph."""
         self.normalise_grammar_markup(gramcheck_errors)
         expected_errors, gramcheck_errors = self.remove_foreign(
@@ -358,10 +365,10 @@ class GramChecker:
                 expected_errors, gramcheck_errors
             )
 
-        return {
-            "uncorrected": sentence,
-            "expected_errors": expected_errors,
-            "gramcheck_errors": [
+        return TestData(
+            uncorrected=sentence,
+            expected_errors=expected_errors,
+            gramcheck_errors=[
                 ErrorData(
                     error_string=gramcheck_error[0],
                     start=gramcheck_error[1],
@@ -373,5 +380,5 @@ class GramChecker:
                 )
                 for gramcheck_error in gramcheck_errors
             ],
-            "filename": filename,
-        }
+            filename=filename,
+        )
