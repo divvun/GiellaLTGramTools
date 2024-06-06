@@ -13,18 +13,19 @@ class GramTest:
 
     def __init__(self):
         self.count = Counter()
+        self.config = None
 
-    def make_test_report(self):
+    def make_test_report(self) -> None:
         test_results = list(self.make_test_results())
-        self.test_outcomes = [
+        self.test_outcomes: list[bool] = [
             self.per_test_report(test_number, test_result, len(test_results))
             for (test_number, test_result) in enumerate(test_results, start=1)
         ]
 
         self.config.get("out").final_result(self.count)
 
-    def per_test_report(self, test_number, test_result, length):
-        count = Counter()
+    def per_test_report(self, test_number, test_result, length) -> bool:
+        count: dict[str, int] = Counter()
 
         true_positives = self.has_true_positives(
             test_result["expected_errors"], test_result["gramcheck_errors"]
@@ -119,7 +120,15 @@ class GramTest:
                 test_result["filename"],
             )
 
-        gramcheck_error = ["", "", "", "", "", []]
+        gramcheck_error = ErrorData(
+            error_string="",
+            start=0,
+            end=0,
+            error_type="",
+            explanation="",
+            suggestions=[],
+            native_error_type="",
+        )
         for false_negative_2 in false_negatives_2:
             out.failure(
                 test_number,
@@ -139,22 +148,28 @@ class GramTest:
         # Did this test sentence as a whole pass or not
         return not has_fails
 
-    def has_same_range_and_error(self, c_error: ErrorData, d_error: list):
+    def has_same_range_and_error(self, c_error: ErrorData, d_error: ErrorData) -> bool:
         """Check if the errors have the same range and error"""
-        if d_error[3] == "double-space-before":
-            return [c_error.start, c_error.end] == d_error[1:2]
+        if d_error.error_type == "double-space-before":
+            return [c_error.start, c_error.end] == [d_error.start, d_error.end]
         else:
-            return [c_error.error_string, c_error.start, c_error.end] == d_error[:3]
+            return [c_error.error_string, c_error.start, c_error.end] == [
+                d_error.error_string,
+                d_error.start,
+                d_error.end,
+            ]
 
-    def has_suggestions_with_hit(self, c_error: ErrorData, d_error: list):
+    def has_suggestions_with_hit(self, c_error: ErrorData, d_error: ErrorData):
         """Check if markup error correction exists in grammarchecker error."""
         return (
-            len(d_error[5]) > 0
+            len(d_error.suggestions) > 0
             and self.has_same_range_and_error(c_error, d_error)
-            and any(correct in d_error[5] for correct in c_error.suggestions)
+            and any(correct in d_error.suggestions for correct in c_error.suggestions)
         )
 
-    def has_true_negatives(self, correct, dc):
+    def has_true_negatives(
+        self, correct: list[ErrorData], dc: list[ErrorData]
+    ) -> list[tuple[ErrorData, ErrorData]]:
         if not correct and not dc:
             return [
                 (
@@ -167,13 +182,23 @@ class GramTest:
                         suggestions=[],
                         native_error_type="",
                     ),
-                    ["", "", "", "", "", ""],
+                    ErrorData(
+                        error_string="",
+                        start=0,
+                        end=0,
+                        error_type="",
+                        explanation="",
+                        suggestions=[],
+                        native_error_type="",
+                    ),
                 )
             ]
 
         return []
 
-    def has_true_positives(self, correct, dc):
+    def has_true_positives(
+        self, correct: list[ErrorData], dc: list[ErrorData]
+    ) -> list[tuple[ErrorData, ErrorData]]:
         return [
             (c_error, d_error)
             for c_error in correct
@@ -181,7 +206,9 @@ class GramTest:
             if self.has_suggestions_with_hit(c_error, d_error)
         ]
 
-    def has_false_positives_1(self, correct, dc):
+    def has_false_positives_1(
+        self, correct: list[ErrorData], dc: list[ErrorData]
+    ) -> list[tuple[ErrorData, ErrorData]]:
         return [
             (c_error, d_error)
             for c_error in correct
@@ -189,14 +216,20 @@ class GramTest:
             if self.has_suggestions_without_hit(c_error, d_error)
         ]
 
-    def has_suggestions_without_hit(self, c_error: ErrorData, d_error: list):
+    def has_suggestions_without_hit(
+        self, c_error: ErrorData, d_error: ErrorData
+    ) -> bool:
         return (
             self.has_same_range_and_error(c_error, d_error)
-            and d_error[5]
-            and not any(correct in d_error[5] for correct in c_error.suggestions)
+            and len(d_error.suggestions) != 0
+            and not any(
+                correct in d_error.suggestions for correct in c_error.suggestions
+            )
         )
 
-    def has_false_positives_2(self, correct, dc):
+    def has_false_positives_2(
+        self, correct: list[ErrorData], dc: list[ErrorData]
+    ) -> list[ErrorData]:
         return [
             d_error
             for d_error in dc
@@ -205,8 +238,10 @@ class GramTest:
             )
         ]
 
-    def has_false_negatives_2(self, c_errors, d_errors):
-        corrects = []
+    def has_false_negatives_2(
+        self, c_errors: list[ErrorData], d_errors: list[ErrorData]
+    ) -> list[ErrorData]:
+        corrects: list[ErrorData] = []
         for c_error in c_errors:
             for d_error in d_errors:
                 if self.has_same_range_and_error(c_error, d_error):
@@ -216,7 +251,9 @@ class GramTest:
 
         return corrects
 
-    def has_false_negatives_1(self, correct, dc):
+    def has_false_negatives_1(
+        self, correct: list[ErrorData], dc: list[ErrorData]
+    ) -> list[tuple[ErrorData, ErrorData]]:
         return [
             (c_error, d_error)
             for c_error in correct
@@ -224,15 +261,17 @@ class GramTest:
             if self.has_no_suggestions(c_error, d_error)
         ]
 
-    def has_no_suggestions(self, c_error, d_error):
-        return self.has_same_range_and_error(c_error, d_error) and not d_error[5]
+    def has_no_suggestions(self, c_error: ErrorData, d_error: ErrorData) -> bool:
+        return (
+            self.has_same_range_and_error(c_error, d_error) and not d_error.suggestions
+        )
 
-    def run(self):
+    def run(self) -> int:
         self.make_test_report()
 
         return 0 if all(self.test_outcomes) else 1
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.config.get("out"))
 
     def make_test_results(self):

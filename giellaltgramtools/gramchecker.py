@@ -361,6 +361,17 @@ class GramChecker:
         return {
             "uncorrected": sentence,
             "expected_errors": expected_errors,
-            "gramcheck_errors": gramcheck_errors,
+            "gramcheck_errors": [
+                ErrorData(
+                    error_string=gramcheck_error[0],
+                    start=gramcheck_error[1],
+                    end=gramcheck_error[2],
+                    error_type=gramcheck_error[3],
+                    explanation=gramcheck_error[4],
+                    suggestions=gramcheck_error[5],
+                    native_error_type=gramcheck_error[6],
+                )
+                for gramcheck_error in gramcheck_errors
+            ],
             "filename": filename,
         }
