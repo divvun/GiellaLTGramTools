@@ -15,6 +15,7 @@ from lxml.etree import Element, _Element
 from giellaltgramtools.common import (
     COLORS,
 )
+from giellaltgramtools.finaloutput import FinalOutput
 from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.nooutput import NoOutput
 from giellaltgramtools.normaloutput import NormalOutput
@@ -31,16 +32,20 @@ class YamlGramTest(GramTest):
         "fn2": "GramDivvun did not find manually marked up error",
     }
 
-    def __init__(self, args, silent, filename=None):
+    def __init__(self, args, filename=None):
         super().__init__()
-        self.config = self.load_config(args, silent, filename)
+        self.config = self.load_config(args, filename)
 
-    def load_config(self, args, silent, filename):
+    def load_config(self, args, filename):
+        output_dict = {
+            "normal": NormalOutput,
+            "final": FinalOutput,
+            "silent": NoOutput,
+        }
         config = {}
 
         config["hide_passes"] = args.get("hide_passes", False)
-        config["out"] = NoOutput(args) if silent else NormalOutput(args)
-
+        config["out"] = output_dict[args.get("output")](args)
         config["test_file"] = filename
 
         if not args.get("colour"):

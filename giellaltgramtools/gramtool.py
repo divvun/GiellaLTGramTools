@@ -76,11 +76,20 @@ def test(ctx, colour, hide_passes, spec, variant):  # noqa: PLR0913
     help="Hide all output; exit code only",
     is_flag=True,
 )
+@click.option(
+    "-o",
+    "--output",
+    default="normal",
+    type=click.Choice(["normal", "final"]),
+    help="Output style for the results",
+)
 @click.pass_context
-def yaml(ctx, silent, yaml_file):
+def yaml(ctx, silent, output, yaml_file):
     """Test a YAML file."""
+    ctx.ensure_object(dict)
+    ctx.obj["output"] = "silent" if silent else output
     try:
-        tester = YamlGramTest(ctx.obj, silent, Path(yaml_file))
+        tester = YamlGramTest(ctx.obj, Path(yaml_file))
         ret = tester.run()
         sys.stdout.write(str(tester))
         sys.exit(ret)
