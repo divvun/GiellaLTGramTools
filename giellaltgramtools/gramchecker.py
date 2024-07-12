@@ -374,7 +374,9 @@ class GramChecker:
                     error_type=gramcheck_error[3],
                     explanation=gramcheck_error[4],
                     suggestions=gramcheck_error[5],
-                    native_error_type=gramcheck_error[6],
+                    native_error_type=(
+                        gramcheck_error[6] if len(gramcheck_error) > 6 else None
+                    ),
                 )
                 for gramcheck_error in gramcheck_errors
             ],
