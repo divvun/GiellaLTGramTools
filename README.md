@@ -39,7 +39,7 @@ yaml  Test a YAML file.
 ### Check yaml files
 
 - With colors: `gtgramtool test -c yaml <yaml-file>`
-- Without colors: `gtgramtool test -c yaml <yaml-file>`
+- Without colors: `gtgramtool test yaml <yaml-file>`
 
 ### Check xml files
 
