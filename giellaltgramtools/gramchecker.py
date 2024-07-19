@@ -341,7 +341,7 @@ class GramChecker:
             [
                 marked_error
                 for marked_error in marked_errors
-                if marked_error[3] != "errorort"
+                if marked_error.error_type != "errorort"
             ],
             [found_error for found_error in found_errors if found_error[3] != "typo"],
         )
