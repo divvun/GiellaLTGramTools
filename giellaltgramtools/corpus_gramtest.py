@@ -11,6 +11,7 @@ from typing import Iterable
 from corpustools import ccat  # type: ignore
 from lxml.etree import _Element, _ElementTree, parse
 
+from giellaltgramtools.common import COLORS
 from giellaltgramtools.corpus_gramchecker import CorpusGramChecker
 from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.gramtest import GramTest
@@ -22,12 +23,16 @@ class CorpusGramTest(GramTest):
     def __init__(self, args: dict[str, str], ignore_typos: bool, targets: list[str]):
         super().__init__()
         self.targets = targets
+
         self.config = {
             "out": NormalOutput(args),
             "ignore_typos": ignore_typos,
             "spec": Path(args.get("spec", "")),
             "variants": [args.get("variant")],
         }
+        if not args.get("colour"):
+            for key in list(COLORS.keys()):
+                COLORS[key] = ""
 
     def flatten_para(self, para: _Element) -> None:
         """Convert non-error xml elements into plain text."""

@@ -12,9 +12,7 @@ import yaml
 from corpustools import errormarkup  # type: ignore
 from lxml.etree import Element, _Element
 
-from giellaltgramtools.common import (
-    COLORS,
-)
+from giellaltgramtools.common import COLORS
 from giellaltgramtools.finaloutput import FinalOutput
 from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.nooutput import NoOutput
