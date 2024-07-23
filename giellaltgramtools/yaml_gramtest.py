@@ -111,11 +111,24 @@ class YamlGramTest(GramTest):
             "\n".join(error_data[0] for error_data in error_datas)
         )
 
+        for item in zip(error_datas, grammar_datas, strict=True):
+            test_sentence = item[0][0]
+            gramcheck_sentence = item[1][0]
+            if test_sentence != gramcheck_sentence:
+                print(
+                    "ERROR: GramDivvun has changed test sentence.\n"
+                    f"'{test_sentence}' -> Input to GramDivvun\n"
+                    f"'{gramcheck_sentence}' -> Output from GramDivvun\n",
+                    "Tip: Check the test sentence using the grammar checker modes.",
+                    file=sys.stderr,
+                )
+                sys.exit(99)  # exit code 99 signals hard exit to Make
+
         return (
             grammarchecker.clean_data(
                 sentence=item[0][0],
                 expected_errors=item[0][1],
-                gramcheck_errors=item[1],
+                gramcheck_errors=item[1][1],
                 filename=self.config["test_file"].name,
             )
             for item in zip(error_datas, grammar_datas, strict=True)
