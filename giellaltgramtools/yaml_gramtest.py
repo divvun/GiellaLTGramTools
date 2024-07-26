@@ -50,7 +50,15 @@ class YamlGramTest(GramTest):
             for key in list(COLORS.keys()):
                 COLORS[key] = ""
 
-        yaml_settings = self.yaml_reader(config["test_file"])
+        try:
+            yaml_settings = self.yaml_reader(config["test_file"])
+        except yaml.parser.ParserError as error:
+            print(
+                f"ERROR: {config['test_file']} is not a valid YAML file",
+                file=sys.stderr,
+            )
+            print(error, file=sys.stderr)
+            sys.exit(99)
 
         try:
             config["spec"] = (
