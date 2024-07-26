@@ -7,6 +7,22 @@ from giellaltgramtools.alloutput import AllOutput
 from giellaltgramtools.common import colourise
 
 
+def light_blue(text: str) -> str:
+    return colourise("{light_blue}" + text + "{reset}")
+
+
+def green(text: str) -> str:
+    return colourise("{green}" + text + "{reset}")
+
+
+def blue(text: str) -> str:
+    return colourise("{blue}" + text + "{reset}")
+
+
+def red(text: str) -> str:
+    return colourise("{red}" + text + "{reset}")
+
+
 class NormalOutput(AllOutput):
     def title(self, index, length, test_case):
         self.write(f'{colourise("{light_blue}")}')
@@ -16,53 +32,84 @@ class NormalOutput(AllOutput):
         self.write(f'{colourise("{reset}")}\n')
 
     def success(  # noqa: PLR0913
-        self, case, total, error_type, expected_error, gramcheck_error, filename
+        self,
+        test_number,
+        number_of_tests,
+        error_type,
+        expected_error,
+        gramcheck_error,
+        filename,
     ):
-        self.write(filename + "\n")
-        errorinfo = f", ({expected_error.explanation})"
-        x = colourise(
-            (
-                "[{light_blue}{case:>%d}/{total}{reset}]"
-                + "[{green}PASS {type}{reset}] "
-                + "{error}:{correction} ({expectected_type}) {blue}=>{reset} "
-                + "{gramerr}:{errlist} ({gram_type})\n"
+        self.write(
+            filename + "\n"
+            "["
+            + light_blue(f"{test_number}/{number_of_tests}")
+            + "["
+            + green(f"PASS {error_type}")
+            + "] "
+            + (
+                (
+                    f"{expected_error.error_string}:"
+                    f"{', '.join(expected_error.suggestions)} "
+                    f"({expected_error.error_type})"
+                )
+                if expected_error.error_string
+                else "No errors expected"
             )
-            % len(str(total)),
-            type=error_type,
-            error=expected_error.error_string,
-            correction=", ".join(expected_error.suggestions),
-            expectected_type=f"{expected_error.explanation}{errorinfo}",
-            case=case,
-            total=total,
-            gramerr=gramcheck_error.error_string,
-            errlist=f'[{", ".join(gramcheck_error.suggestions)}]',
-            gram_type=gramcheck_error.explanation,
+            + " "
+            + blue("=>")
+            + " "
+            + (
+                (
+                    f"{gramcheck_error.error_string}:"
+                    f"[{', '.join(gramcheck_error.suggestions)}] "
+                    f"({gramcheck_error.error_type})"
+                )
+                if gramcheck_error.error_string
+                else "GramDivvun did not find any errors"
+            )
+            + "\n"
         )
-        self.write(x)
 
     def failure(  # noqa: PLR0913
-        self, case, total, error_type, expected_error, gramcheck_error, filename
+        self,
+        test_number,
+        number_of_tests,
+        error_type,
+        expected_error,
+        gramcheck_error,
+        filename,
     ):
-        self.write(filename + "\n")
-        errorinfo = f", ({expected_error.explanation})"
-        x = colourise(
-            (
-                "[{light_blue}{case:>%d}/{total}{reset}][{red}FAIL {type}"
-                "{reset}] {error}:{correction} ({expectected_type}) "
-                + "{blue}=>{reset} {gramerr}:{errlist} ({gram_type})\n"
+        self.write(
+            filename + "\n"
+            "["
+            + light_blue(f"{test_number}/{number_of_tests}")
+            + "["
+            + red(f"FAIL {error_type}")
+            + "] "
+            + (
+                (
+                    f"{expected_error.error_string}:"
+                    f"{', '.join(expected_error.suggestions)} "
+                    f"({expected_error.error_type})"
+                )
+                if expected_error.error_string
+                else "No errors expected"
             )
-            % len(str(total)),
-            type=error_type,
-            error=expected_error.error_string,
-            correction=", ".join(expected_error.suggestions),
-            expectected_type=f"{expected_error.explanation}{errorinfo}",
-            case=case,
-            total=total,
-            gramerr=gramcheck_error.error_string,
-            errlist=f'[{", ".join(gramcheck_error.suggestions)}]',
-            gram_type=gramcheck_error.explanation,
+            + " "
+            + blue("=>")
+            + " "
+            + (
+                (
+                    f"{gramcheck_error.error_string}:"
+                    f"[{', '.join(gramcheck_error.suggestions)}] "
+                    f"({gramcheck_error.error_type})"
+                )
+                if gramcheck_error.error_string
+                else "GramDivvun did not find any errors"
+            )
+            + "\n"
         )
-        self.write(x)
 
     def result(self, number, count, test_case):
         passes = sum([count[key] for key in count if key.startswith("t")])

@@ -25,8 +25,8 @@ class GramTest:
 
         self.config.get("out").final_result(self.count)
 
-    def per_test_report(
-        self, test_number: int, test_result: TestData, length: int
+    def per_test_report(  # noqa: C901
+        self, test_number: int, test_result: TestData, number_of_tests: int
     ) -> bool:
         count: dict[str, int] = Counter()
 
@@ -61,13 +61,13 @@ class GramTest:
         out = self.config.get("out")
 
         if not (self.config.get("hide_passes", False) and not has_fails):
-            out.title(test_number, length, test_result.uncorrected)
+            out.title(test_number, number_of_tests, test_result.uncorrected)
 
         if not self.config.get("hide_passes", False):
             for true_positive in true_positives:
                 out.success(
                     test_number,
-                    length,
+                    number_of_tests,
                     "tp",
                     true_positive[0],
                     true_positive[1],
@@ -77,7 +77,7 @@ class GramTest:
             for true_negative in true_negatives:
                 out.success(
                     test_number,
-                    length,
+                    number_of_tests,
                     "tn",
                     true_negative[0],
                     true_negative[1],
@@ -87,7 +87,7 @@ class GramTest:
         for false_positive_1 in false_positives_1:
             out.failure(
                 test_number,
-                length,
+                number_of_tests,
                 "fp1",
                 false_positive_1[0],
                 false_positive_1[1],
@@ -106,7 +106,7 @@ class GramTest:
         for false_positive_2 in false_positives_2:
             out.failure(
                 test_number,
-                length,
+                number_of_tests,
                 "fp2",
                 expected_error,
                 false_positive_2,
@@ -116,7 +116,7 @@ class GramTest:
         for false_negative_1 in false_negatives_1:
             out.failure(
                 test_number,
-                length,
+                number_of_tests,
                 "fn1",
                 false_negative_1[0],
                 false_negative_1[1],
@@ -135,7 +135,7 @@ class GramTest:
         for false_negative_2 in false_negatives_2:
             out.failure(
                 test_number,
-                length,
+                number_of_tests,
                 "fn2",
                 false_negative_2,
                 gramcheck_error,
