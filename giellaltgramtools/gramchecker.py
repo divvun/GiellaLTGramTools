@@ -160,7 +160,22 @@ class GramChecker:
         ]
 
     def fix_aistton(self, d_errors):
+        """Rearrange GramDivvun aistton errors to match the Giella markup format.
+
+        GramDivvun marks up errors with wrong quotemarks by including the word next to
+        the quote marks.
+
+        The manual error markup, on the other hand, only marks up the quote marks.
+
+        Args:
+            d_errors (list): List of GramDivvun errors.
+        Returns:
+            list: List of GramDivvun errors with aistton errors fixed.
+        """
         for d_error in d_errors:
+            # Skip punct-aistton errors
+            # punct-aistton are emitted together with
+            # punct-aistton-left and punct-aistton-right
             if d_error[3] != "punct-aistton":
                 if (
                     d_error[3] == "punct-aistton-left"
