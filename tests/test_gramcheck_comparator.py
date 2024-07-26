@@ -238,6 +238,7 @@ class TestGramChecker(unittest.TestCase):
                         "msyn-compound",
                         '"Goaskin viellja" orru leamen goallossátni',
                         ["Goaskinviellja"],
+                        "Goallosteapmi",
                     ],
                     [
                         '"Goaskin viellja"',

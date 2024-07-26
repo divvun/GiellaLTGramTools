@@ -134,6 +134,7 @@ class GramChecker:
                 error[3],
                 error[4],
                 [suggestion[1:-1] for suggestion in error[5]],
+                error[6],
             ]
 
         aistton_both_ranges = [
