@@ -6,7 +6,6 @@
 
 import json
 import subprocess
-from dataclasses import replace
 
 from lxml.etree import _Element
 
@@ -272,26 +271,6 @@ class GramChecker:
 
         return d_errors
 
-    def normalise_error_markup(self, error: ErrorData) -> ErrorData:
-
-        d_pos = error.error_string.find("  ")
-        start = error.start + d_pos
-        end = error.start + 3
-        return replace(
-            error,
-            start=start,
-            end=end,
-            error_string=error.error_string[start:end],
-        )
-
-    def normalise_grammar_markup(self, errors):
-        for error in errors:
-            if error[3] == "double-space-before":
-                d_pos = error[0].find("  ")
-                error[1] = error[1] + d_pos
-                error[2] = error[1] + 3
-                error[0] = error[0][error[1] : error[2]]
-
     @staticmethod
     def error_markup_needs_normalisation(error: ErrorData) -> bool:
         return (
@@ -308,15 +287,7 @@ class GramChecker:
 
         sentence = "".join(parts)
 
-        return sentence, [
-            (
-                self.normalise_error_markup(error)
-                if self.error_markup_needs_normalisation(error)
-                else error
-            )
-            for error in errors
-            if error is not None
-        ]
+        return sentence, [error for error in errors if error is not None]
 
     def remove_foreign(self, marked_errors, found_errors):
         """Remove foreign language error elements."""
@@ -361,7 +332,6 @@ class GramChecker:
         filename: str,
     ) -> TestData:
         """Extract data for reporting from a paragraph."""
-        self.normalise_grammar_markup(gramcheck_errors)
         expected_errors, gramcheck_errors = self.remove_foreign(
             expected_errors, gramcheck_errors
         )
