@@ -1,18 +1,34 @@
 """Test grammarcheck tester functionality"""
+
+import os
 import unittest
-import gramcheck_comparator
-from parameterized import parameterized
+from pathlib import Path
+
 from lxml import etree
+from parameterized import parameterized
+
+from giellaltgramtools.corpus_gramchecker import CorpusGramChecker
+from giellaltgramtools.normaloutput import NormalOutput
 
 
 class TestGramChecker(unittest.TestCase):
     """Test grammarcheck tester"""
 
     def setUp(self) -> None:
-        self.gram_checker = gramcheck_comparator.CorpusGramChecker(
-            "/usr/share/voikko/4/se.zcheck"
-        )
-        return super().setUp()
+        gtlangs = os.getenv("GTLANGS")
+        if gtlangs is not None:
+            self.gram_checker = CorpusGramChecker(
+                config={
+                    "out": NormalOutput(args={}),
+                    "ignore_typos": False,
+                    "spec": Path(gtlangs)
+                    / "lang-sme/tools/grammarchecker/pipespec.xml",
+                    "variants": ["smegram-dev"],
+                }
+            )
+            return super().setUp()
+        else:
+            raise ValueError("GTLANGS environment variable not set")
 
     @parameterized.expand(
         [
