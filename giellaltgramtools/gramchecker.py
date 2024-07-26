@@ -94,39 +94,50 @@ class GramChecker:
 
         d_errors.sort(key=self.sort_by_range)
 
-    def fix_aistton_left(self, d_error, d_errors, position):
-        sentence = d_error[0][1:]
-        d_error[0] = d_error[0][0]
-        d_error[5] = ["”"]
-        d_error[2] = d_error[1] + 1
+    def fix_hidden_by_aistton(self, d_errors) -> list:
+        """Fix errors hidden by aistton-both errors.
 
-        new_d_error = self.check_paragraphs(sentence)[0]
-        if new_d_error:
-            new_d_error[0][1] = d_error[1] + 1
-            new_d_error[0][2] = d_error[1] + 1 + len(sentence)
-            d_errors.insert(position + 1, new_d_error[0])
+        A GramDivvun error of type aistton-both can contain some other error.
+        The other error is reported as having the same range as the aistton-both error.
 
-    def fix_aistton_right(self, d_error, d_errors, position):
-        sentence = d_error[0][:-1]
-        d_error[0] = d_error[0][-1]
-        d_error[5] = ["”"]
-        d_error[1] = d_error[2] - 1
+        This function fixes the range to match the marked up error.
 
-        new_d_error = self.check_paragraphs(sentence)[0]
-        if new_d_error:
-            new_d_error[0][1] = d_error[1] - len(sentence)
-            new_d_error[0][2] = d_error[1]
-            d_errors.insert(position, new_d_error[0])
+        Args:
+            d_errors (list): List of GramDivvun errors.
 
-    def fix_hidden_by_aistton_both(self, d_errors):
-        """Make the index, error and suggestions match the manual errormarkup."""
+        Returns:
+            list: List of GramDivvun errors with the hidden errors revealed.
+        """
 
         def is_hidden_error(error):
-            return (error[1], error[2]) in aistton_both_ranges and error[
-                3
-            ] != "punct-aistton-both"
+            return (error[1], error[2]) in aistton_ranges and error[3] not in [
+                "punct-aistton-both",
+                "punct-aistton-left",
+                "punct-aistton-right",
+            ]
 
         def fix_hidden_error(error):
+            if error[3] == "punct-aistton-left":
+                return [
+                    error[0][1:],
+                    error[1] + 1,
+                    error[2],
+                    error[3],
+                    error[4],
+                    [suggestion[1:] for suggestion in error[5]],
+                    error[6],
+                ]
+            if error[3] == "punct-aistton-right":
+                return [
+                    error[0][:-1],
+                    error[1],
+                    error[2] - 1,
+                    error[3],
+                    error[4],
+                    [suggestion[:-1] for suggestion in error[5]],
+                    error[6],
+                ]
+
             return [
                 error[0][1:-1],
                 error[1] + 1,
@@ -137,43 +148,48 @@ class GramChecker:
                 error[6],
             ]
 
-        aistton_both_ranges = [
+        aistton_ranges = [
             (error[1], error[2])
             for error in d_errors
-            if error[3] == "punct-aistton-both"
+            if error[3]
+            in ["punct-aistton-both", "punct-aistton-left", "punct-aistton-right"]
         ]
         return [
             fix_hidden_error(error) if is_hidden_error(error) else error
             for error in d_errors
         ]
 
-    def fix_aistton_both(self, d_error, d_errors, position):
-        if d_error[0][-1] != "”":
-            right_error = list(d_error)
-            right_error[0] = right_error[0][-1]
-            right_error[5] = ["”"]
-            right_error[1] = right_error[2] - 1
-            right_error[3] = "punct-aistton-both"
-            d_errors.insert(position + 1, right_error)
-
-        d_error[0] = d_error[0][0]
-        d_error[5] = ["”"]
-        d_error[2] = d_error[1] + 1
-
     def fix_aistton(self, d_errors):
-        aistton_fixers = {
-            "punct-aistton-left": self.fix_aistton_left,
-            "punct-aistton-right": self.fix_aistton_right,
-            "punct-aistton-both": self.fix_aistton_both,
-        }
-
-        for position, d_error in enumerate(d_errors):
-            if (
-                d_error[3] in aistton_fixers
-                and len(d_error[0]) > 1
-                and len(d_error[5]) == 1
-            ):
-                aistton_fixers[d_error[3]](d_error, d_errors, position)
+        for d_error in d_errors:
+            if d_error[3] != "punct-aistton":
+                if (
+                    d_error[3] == "punct-aistton-left"
+                    or d_error[3] == "punct-aistton-both"
+                ):
+                    yield [
+                        d_error[0][0],
+                        d_error[1],
+                        d_error[1] + 1,
+                        d_error[3],
+                        d_error[4],
+                        ["”"],
+                        d_error[6],
+                    ]
+                elif (
+                    d_error[3] == "punct-aistton-right"
+                    or d_error[3] == "punct-aistton-both"
+                ):
+                    yield [
+                        d_error[0][-1],
+                        d_error[2] - 1,
+                        d_error[2],
+                        d_error[3],
+                        d_error[4],
+                        ["”"],
+                        d_error[6],
+                    ]
+                else:
+                    yield d_error
 
     def get_error_corrections(self, para):
         parts = []
@@ -262,8 +278,7 @@ class GramChecker:
             for pos in sorted(index_set, reverse=True):
                 del errors[pos]
 
-        d_errors = self.fix_hidden_by_aistton_both(d_errors)
-        self.fix_aistton(d_errors)
+        d_errors = list(self.fix_aistton(d_errors))
         for d_error in d_errors:
             if d_error[3] == "no-space-before-parent-start":
                 self.fix_no_space_before_parent_start(d_error, d_errors)
