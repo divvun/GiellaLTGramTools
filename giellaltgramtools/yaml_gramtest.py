@@ -52,11 +52,18 @@ class YamlGramTest(GramTest):
 
         yaml_settings = self.yaml_reader(config["test_file"])
 
-        config["spec"] = (
-            config["test_file"].parent / yaml_settings.get("Config").get("Spec")
-            if not args.get("spec")
-            else Path(args.get("spec"))
-        )
+        try:
+            config["spec"] = (
+                config["test_file"].parent / yaml_settings.get("Config").get("Spec")
+                if not args.get("spec")
+                else Path(args.get("spec"))
+            )
+        except AttributeError:
+            print(
+                f"ERROR: No spec in {config['test_file']}",
+                file=sys.stderr,
+            )
+            sys.exit(99)
         config["variants"] = (
             yaml_settings.get("Config").get("Variants")
             if not args.get("variant")
