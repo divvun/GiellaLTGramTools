@@ -113,6 +113,7 @@ class YamlGramTest(GramTest):
         error_datas = [
             grammarchecker.paragraph_to_testdata(self.make_error_markup(text))
             for text in self.config["tests"]
+            if text.strip()
         ]
         grammar_datas = grammarchecker.check_paragraphs(
             "\n".join(error_data[0] for error_data in error_datas)
