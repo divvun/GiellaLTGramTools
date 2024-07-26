@@ -8,6 +8,8 @@ from lxml import etree
 from parameterized import parameterized
 
 from giellaltgramtools.corpus_gramchecker import CorpusGramChecker
+from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.normaloutput import NormalOutput
 
 
@@ -22,7 +24,7 @@ class TestGramChecker(unittest.TestCase):
                     "out": NormalOutput(args={}),
                     "ignore_typos": False,
                     "spec": Path(gtlangs)
-                    / "lang-sme/tools/grammarchecker/pipespec.xml",
+                    / "lang-sme/tools/grammarcheckers/pipespec.xml",
                     "variants": ["smegram-dev"],
                 }
             )
@@ -128,8 +130,8 @@ class TestGramChecker(unittest.TestCase):
         errors = []
         self.gram_checker.extract_error_info(parts, errors, etree.fromstring(paragraph))
 
-        self.assertListEqual(parts, want_parts)
-        self.assertListEqual(errors, want_errors)
+        assert parts == want_parts
+        assert errors == want_errors
 
     @parameterized.expand(
         [
@@ -152,7 +154,7 @@ class TestGramChecker(unittest.TestCase):
     )
     def test_correct_lowest_level(self, para, wanted):
         corrected = self.gram_checker.correct_lowest_level(etree.fromstring(para))
-        self.assertEqual(etree.tostring(corrected, encoding="unicode"), wanted)
+        assert etree.tostring(corrected, encoding="unicode") == wanted
 
     @parameterized.expand(
         [
@@ -203,7 +205,7 @@ class TestGramChecker(unittest.TestCase):
     )
     def test_fix_aistton_both(self, error, errors, position, wanted_errors):
         self.gram_checker.fix_aistton_both(error, errors, position)
-        self.assertListEqual(errors, wanted_errors)
+        assert errors == wanted_errors
 
     @parameterized.expand(
         [
@@ -329,62 +331,267 @@ class TestGramChecker(unittest.TestCase):
         ]
     )
     def test_fix_hidden_by_aistton_both(self, errors, wanted_errors):
-        self.assertListEqual(
-            self.gram_checker.fix_hidden_by_aistton_both(errors), wanted_errors
-        )
+        assert self.gram_checker.fix_hidden_by_aistton_both(errors) == wanted_errors
 
 
 class TestGramTester(unittest.TestCase):
     """Test grammarcheck tester"""
 
     def setUp(self) -> None:
-        self.gram_test = gramcheck_comparator.GramTest()
+        self.gram_test = GramTest()
         return super().setUp()
 
     @parameterized.expand(
         [
-            (["c", 3, 6, "", "", []], ["", 3, 6, "double-space-before", "", []], True),
-            (["c", 3, 6, "", "", []], ["", 2, 5, "double-space-before", "", []], False),
-            (["c", 3, 6, "errorsyn", "", []], ["d", 3, 6, "msyn", "", []], False),
-            (["c", 3, 6, "errorsyn", "", []], ["c", 2, 6, "msyn", "", []], False),
-            (["c", 3, 6, "errorsyn", "", []], ["c", 3, 5, "msyn", "", []], False),
-            (["c", 3, 6, "errorsyn", "", []], ["c", 3, 6, "msyn", "", []], True),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="",
+                    start=3,
+                    end=6,
+                    error_type="double-space-before",
+                    explanation="",
+                    suggestions=[],
+                ),
+                True,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="",
+                    start=2,
+                    end=5,
+                    error_type="double-space-before",
+                    explanation="",
+                    suggestions=[],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="errorsyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="d",
+                    start=3,
+                    end=6,
+                    error_type="msyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="errorsyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=2,
+                    end=6,
+                    error_type="msyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="errorsyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=5,
+                    error_type="msyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="errorsyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="msyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                True,
+            ),
         ]
     )
     def test_same_range_and_error(self, c_error, d_error, expected_boolean):
-        self.assertTrue(
+        assert (
             self.gram_test.has_same_range_and_error(c_error, d_error)
             == expected_boolean
         )
 
     @parameterized.expand(
         [
-            (["c", 3, 6, "", "", []], ["", 3, 6, "double-space-before", "", []], False),
             (
-                ["c", 3, 6, "", "", ["b"]],
-                ["c", 3, 6, "double-space-before", "", ["a"]],
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="",
+                    start=3,
+                    end=6,
+                    error_type="double-space-before",
+                    explanation="",
+                    suggestions=[],
+                ),
                 False,
             ),
-            (["c", 3, 6, "errorsyn", "", []], ["c", 3, 6, "msyn", "", []], False),
             (
-                ["c", 3, 6, "errorsyn", "", ["a"]],
-                ["c", 3, 6, "msyn", "", ["a", "b"]],
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=["b"],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="double-space-before",
+                    explanation="",
+                    suggestions=["a"],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="errorsyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="msyn",
+                    explanation="",
+                    suggestions=[],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="errorsyn",
+                    explanation="",
+                    suggestions=["a"],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="msyn",
+                    explanation="",
+                    suggestions=["a", "b"],
+                ),
                 True,
             ),
         ]
     )
     def test_suggestion_with_hits(self, c_error, d_error, expected_boolean):
-        self.assertEqual(
-            self.gram_test.has_suggestions_with_hit(c_error, d_error), expected_boolean
+        assert (
+            self.gram_test.has_suggestions_with_hit(c_error, d_error)
+            == expected_boolean
         )
 
     @parameterized.expand(
         [
-            (["c", 3, 6, "", "", ["b"]], ["c", 3, 6, "", "", ["b"]], False),
-            (["c", 3, 6, "", "", ["b"]], ["c", 3, 6, "", "", []], True),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=["b"],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=["b"],
+                ),
+                False,
+            ),
+            (
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=["b"],
+                ),
+                ErrorData(
+                    error_string="c",
+                    start=3,
+                    end=6,
+                    error_type="",
+                    explanation="",
+                    suggestions=[],
+                ),
+                True,
+            ),
         ]
     )
     def test_has_no_suggesions(self, c_error, d_error, expected_boolean):
-        self.assertEqual(
-            self.gram_test.has_no_suggestions(c_error, d_error), expected_boolean
-        )
+        assert self.gram_test.has_no_suggestions(c_error, d_error) == expected_boolean
