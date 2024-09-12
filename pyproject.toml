@@ -14,7 +14,7 @@ lxml = "^5.2.1"
 
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.1.7"
+ruff = "^0.6.4"
 mypy = "^1.8.0"
 types-lxml = "^2024.2.9"
 types-pyyaml = "^6.0.12.12"
