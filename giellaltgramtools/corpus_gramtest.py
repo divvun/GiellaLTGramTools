@@ -109,6 +109,6 @@ class CorpusGramTest(GramTest):
                 yield grammarchecker.clean_data(
                     sentence=item[0][0],
                     expected_errors=item[0][1],
-                    gramcheck_errors=item[1],
+                    gramcheck_errors=item[1][1],
                     filename=filename,
                 )
