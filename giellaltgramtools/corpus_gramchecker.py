@@ -26,7 +26,7 @@ class CorpusGramChecker(GramChecker):
     def get_variant(self, spec_file: Path):
         (default_pipe, available_variants) = get_pipespecs(spec_file)
 
-        if self.config.get("variants") is None:
+        if not self.config.get("variants"):
             return f"--variant {default_pipe}"
 
         variants = {

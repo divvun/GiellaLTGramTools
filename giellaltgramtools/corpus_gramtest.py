@@ -28,7 +28,7 @@ class CorpusGramTest(GramTest):
             "out": NormalOutput(args),
             "ignore_typos": ignore_typos,
             "spec": Path(args.get("spec", "")),
-            "variants": [args.get("variant")],
+            "variants": [args.get("variant")] if args.get("variant") else [],
         }
         if not args.get("colour"):
             for key in list(COLORS.keys()):
