@@ -40,6 +40,10 @@ class NormalOutput(AllOutput):
         gramcheck_error,
         filename,
     ):
+        explanation = (
+            f" ({expected_error.explanation})" if expected_error.explanation else ""
+        )
+
         self.write(
             filename + "\n"
             "["
@@ -50,8 +54,9 @@ class NormalOutput(AllOutput):
             + (
                 (
                     f"{expected_error.error_string}:"
-                    f"{', '.join(expected_error.suggestions)} "
-                    f"({expected_error.error_type})"
+                    f"({', '.join(expected_error.suggestions)}"
+                    f"{explanation}"
+                    ")"
                 )
                 if expected_error.error_string
                 else "No errors expected"
@@ -80,6 +85,9 @@ class NormalOutput(AllOutput):
         gramcheck_error,
         filename,
     ):
+        explanation = (
+            f" ({expected_error.explanation})" if expected_error.explanation else ""
+        )
         self.write(
             filename + "\n"
             "["
@@ -90,8 +98,9 @@ class NormalOutput(AllOutput):
             + (
                 (
                     f"{expected_error.error_string}:"
-                    f"{', '.join(expected_error.suggestions)} "
-                    f"({expected_error.error_type})"
+                    f"({', '.join(expected_error.suggestions)}"
+                    f"{explanation}"
+                    ")"
                 )
                 if expected_error.error_string
                 else "No errors expected"
