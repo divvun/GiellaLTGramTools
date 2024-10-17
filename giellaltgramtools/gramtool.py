@@ -47,7 +47,7 @@ def main(ctx):
 @click.option(
     "-s",
     "--spec",
-    help="""Path to the pipeline.xml spec or .zcheck file. Necessary argument for the 
+    help="""Path to the pipespec.xml spec or .zcheck file. Necessary argument for the 
     xml command, useful for the yaml command when doing out of tree builds.""",
     type=click.Path(exists=True),
 )
