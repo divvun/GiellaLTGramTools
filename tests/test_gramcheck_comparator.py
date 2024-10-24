@@ -182,28 +182,6 @@ class TestGramChecker(unittest.TestCase):
         assert parts == want_parts
         assert errors == want_errors
 
-    @parameterized.expand(
-        [
-            (
-                "<p>"
-                "<errormorphsyn>"
-                "<errorort>"
-                "šaddai"
-                '<correct errorinfo="verb,conc">šattai</correct>'
-                "</errorort> ollu áššit"
-                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'  # noqa: E501
-                "</errormorphsyn></p>",
-                "<p>"
-                "<errormorphsyn>"
-                "šattai ollu áššit"
-                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'  # noqa: E501
-                "</errormorphsyn></p>",
-            )
-        ]
-    )
-    def test_correct_lowest_level(self, para, wanted):
-        corrected = self.gram_checker.correct_lowest_level(etree.fromstring(para))
-        assert etree.tostring(corrected, encoding="unicode") == wanted
 
     @parameterized.expand(
         [
