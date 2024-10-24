@@ -348,7 +348,7 @@ class TestGramChecker(unittest.TestCase):
         ]
     )
     def test_fix_hidden_by_aistton_both(self, errors, wanted_errors):
-        assert self.gram_checker.fix_hidden_by_aistton_both(errors) == wanted_errors
+        assert self.gram_checker.fix_hidden_by_aistton(errors) == wanted_errors
 
 
 class TestGramTester(unittest.TestCase):
