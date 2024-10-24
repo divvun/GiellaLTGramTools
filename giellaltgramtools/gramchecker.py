@@ -172,7 +172,7 @@ class GramChecker:
         Returns:
             list: List of GramDivvun errors with aistton errors fixed.
         """
-        for d_error in d_errors:
+        for d_error in self.fix_hidden_by_aistton(d_errors):
             # Skip punct-aistton errors
             # punct-aistton are emitted together with
             # punct-aistton-left and punct-aistton-right
