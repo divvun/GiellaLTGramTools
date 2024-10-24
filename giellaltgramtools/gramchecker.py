@@ -177,10 +177,7 @@ class GramChecker:
             # punct-aistton are emitted together with
             # punct-aistton-left and punct-aistton-right
             if d_error[3] != "punct-aistton":
-                if (
-                    d_error[3] == "punct-aistton-left"
-                    or d_error[3] == "punct-aistton-both"
-                ):
+                if d_error[3] == "punct-aistton-both":
                     yield [
                         d_error[0][0],
                         d_error[1],
@@ -190,10 +187,26 @@ class GramChecker:
                         ["”"],
                         d_error[6],
                     ]
-                elif (
-                    d_error[3] == "punct-aistton-right"
-                    or d_error[3] == "punct-aistton-both"
-                ):
+                    yield [
+                        d_error[0][-1],
+                        d_error[2] - 1,
+                        d_error[2],
+                        d_error[3],
+                        d_error[4],
+                        ["”"],
+                        d_error[6],
+                    ]
+                elif d_error[3] == "punct-aistton-left":
+                    yield [
+                        d_error[0][0],
+                        d_error[1],
+                        d_error[1] + 1,
+                        d_error[3],
+                        d_error[4],
+                        ["”"],
+                        d_error[6],
+                    ]
+                elif d_error[3] == "punct-aistton-right":
                     yield [
                         d_error[0][-1],
                         d_error[2] - 1,

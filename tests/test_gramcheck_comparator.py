@@ -182,19 +182,9 @@ class TestGramChecker(unittest.TestCase):
         assert parts == want_parts
         assert errors == want_errors
 
-
     @parameterized.expand(
         [
             (
-                [
-                    "“Dálveleaikkat“",
-                    7,
-                    22,
-                    "punct-aistton-both",
-                    "Boasttuaisttonmearkkat",
-                    ["”Dálveleaikkat”"],
-                    "Aisttonmearkkat",
-                ],
                 [
                     [
                         "“Dálveleaikkat“",
@@ -206,7 +196,6 @@ class TestGramChecker(unittest.TestCase):
                         "Aisttonmearkkat",
                     ]
                 ],
-                0,
                 [
                     [
                         "“",
@@ -230,9 +219,9 @@ class TestGramChecker(unittest.TestCase):
             )
         ]
     )
-    def test_fix_aistton_both(self, error, errors, position, wanted_errors):
-        self.gram_checker.fix_aistton_both(error, errors, position)
-        assert errors == wanted_errors
+    def test_fix_aistton_both(self, errors, wanted_errors):
+        my_errors = self.gram_checker.fix_aistton(errors)
+        assert list(my_errors) == wanted_errors
 
     @parameterized.expand(
         [
