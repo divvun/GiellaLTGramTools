@@ -35,13 +35,13 @@ class TestGramChecker(unittest.TestCase):
     @parameterized.expand(
         [
             (
-                '<p>Mun lean <errorort>sjievnnjis<correct errorinfo="conc,vnn-vnnj">sjievnnijis</correct></errorort></p>',
+                '<p>Mun lean <errorort>sjievnnjis<correct errorinfo="conc,vnn-vnnj">sjievnnijis</correct></errorort></p>',  # noqa: E501
                 ["Mun lean ", "sjievnnjis"],
                 [["sjievnnjis", 9, 19, "errorort", "conc,vnn-vnnj", ["sjievnnijis"]]],
             ),
             (
                 "<p><errormorphsyn>Nieiddat leat nuorra"
-                '<correct errorinfo="a,spred,nompl,nomsg,agr">Nieiddat leat nuorat</correct>'
+                '<correct errorinfo="a,spred,nompl,nomsg,agr">Nieiddat leat nuorat</correct>'  # noqa: E501
                 "</errormorphsyn></p>",
                 ["Nieiddat leat nuorra"],
                 [
@@ -80,7 +80,7 @@ class TestGramChecker(unittest.TestCase):
                 "šaddai"
                 '<correct errorinfo="verb,conc">šattai</correct>'
                 "</errorort> ollu áššit"
-                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'
+                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'  # noqa: E501
                 "</errormorphsyn></p>",
                 ["šaddai", " ollu áššit"],
                 [["šaddai", 0, 6, "errorort", "verb,conc", ["šattai"]]],
@@ -96,7 +96,7 @@ class TestGramChecker(unittest.TestCase):
                 [["b  c", 2, 6, "errorformat", "notspace", ["b c"]]],
             ),
             (
-                "<p>Kondomat <errormorphsyn>juhkkojuvvo<correct>juhkkojuvvojedje</correct><correct>juhkkojuvvojit</correct></errormorphsyn> dehe <errormorphsyn>vuvdojuvvo<correct>vuvdojuvvojedje</correct><correct>vuvdojuvvojit</correct></errormorphsyn> nuoraidvuostáváldimis.</p>",
+                "<p>Kondomat <errormorphsyn>juhkkojuvvo<correct>juhkkojuvvojedje</correct><correct>juhkkojuvvojit</correct></errormorphsyn> dehe <errormorphsyn>vuvdojuvvo<correct>vuvdojuvvojedje</correct><correct>vuvdojuvvojit</correct></errormorphsyn> nuoraidvuostáváldimis.</p>",  # noqa: E501
                 [
                     "Kondomat ",
                     "juhkkojuvvo",
@@ -142,12 +142,12 @@ class TestGramChecker(unittest.TestCase):
                 "šaddai"
                 '<correct errorinfo="verb,conc">šattai</correct>'
                 "</errorort> ollu áššit"
-                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'
+                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'  # noqa: E501
                 "</errormorphsyn></p>",
                 "<p>"
                 "<errormorphsyn>"
                 "šattai ollu áššit"
-                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'
+                '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'  # noqa: E501
                 "</errormorphsyn></p>",
             )
         ]
