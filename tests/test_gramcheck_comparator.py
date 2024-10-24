@@ -37,7 +37,17 @@ class TestGramChecker(unittest.TestCase):
             (
                 '<p>Mun lean <errorort>sjievnnjis<correct errorinfo="conc,vnn-vnnj">sjievnnijis</correct></errorort></p>',  # noqa: E501
                 ["Mun lean ", "sjievnnjis"],
-                [["sjievnnjis", 9, 19, "errorort", "conc,vnn-vnnj", ["sjievnnijis"]]],
+                [
+                    ErrorData(
+                        error_string="sjievnnjis",
+                        start=9,
+                        end=19,
+                        error_type="errorort",
+                        explanation="conc,vnn-vnnj",
+                        suggestions=["sjievnnijis"],
+                        native_error_type="errorort",
+                    )
+                ],
             ),
             (
                 "<p><errormorphsyn>Nieiddat leat nuorra"
@@ -45,14 +55,15 @@ class TestGramChecker(unittest.TestCase):
                 "</errormorphsyn></p>",
                 ["Nieiddat leat nuorra"],
                 [
-                    [
-                        "Nieiddat leat nuorra",
-                        0,
-                        20,
-                        "errormorphsyn",
-                        "a,spred,nompl,nomsg,agr",
-                        ["Nieiddat leat nuorat"],
-                    ]
+                    ErrorData(
+                        error_string="Nieiddat leat nuorra",
+                        start=0,
+                        end=20,
+                        error_type="errormorphsyn",
+                        explanation="a,spred,nompl,nomsg,agr",
+                        suggestions=["Nieiddat leat nuorat"],
+                        native_error_type="errormorphsyn",
+                    )
                 ],
             ),
             (
@@ -69,8 +80,24 @@ class TestGramChecker(unittest.TestCase):
                     " sámegillii? Muhtin, veahket mu!) gos",
                 ],
                 [
-                    ["Nordkjosbotn ii", 6, 21, "errorort", "", ["Nordkjosbotnii"]],
-                    ["nordkjosbotn", 34, 46, "errorort", "", ["Nordkjosbotn"]],
+                    ErrorData(
+                        error_string="Nordkjosbotn ii",
+                        start=6,
+                        end=21,
+                        error_type="errorort",
+                        explanation="",
+                        suggestions=["Nordkjosbotnii"],
+                        native_error_type="errorort",
+                    ),
+                    ErrorData(
+                        error_string="nordkjosbotn",
+                        start=34,
+                        end=46,
+                        error_type="errorort",
+                        explanation="",
+                        suggestions=["Nordkjosbotn"],
+                        native_error_type="errorort",
+                    ),
                 ],
             ),
             (
@@ -83,7 +110,17 @@ class TestGramChecker(unittest.TestCase):
                 '<correct errorinfo="verb,fin,pl3prs,sg3prs,tense">šadde ollu áššit</correct>'  # noqa: E501
                 "</errormorphsyn></p>",
                 ["šaddai", " ollu áššit"],
-                [["šaddai", 0, 6, "errorort", "verb,conc", ["šattai"]]],
+                [
+                    ErrorData(
+                        error_string="šaddai",
+                        start=0,
+                        end=6,
+                        error_type="errorort",
+                        explanation="verb,conc",
+                        suggestions=["šattai"],
+                        native_error_type="errorort",
+                    )
+                ],
             ),
             (
                 "<p>a "
@@ -93,7 +130,17 @@ class TestGramChecker(unittest.TestCase):
                 "</errorformat>"
                 " d.</p>",
                 ["a ", "b  c", " d."],
-                [["b  c", 2, 6, "errorformat", "notspace", ["b c"]]],
+                [
+                    ErrorData(
+                        error_string="b  c",
+                        start=2,
+                        end=6,
+                        error_type="errorformat",
+                        explanation="notspace",
+                        suggestions=["b c"],
+                        native_error_type="errorformat",
+                    )
+                ],
             ),
             (
                 "<p>Kondomat <errormorphsyn>juhkkojuvvo<correct>juhkkojuvvojedje</correct><correct>juhkkojuvvojit</correct></errormorphsyn> dehe <errormorphsyn>vuvdojuvvo<correct>vuvdojuvvojedje</correct><correct>vuvdojuvvojit</correct></errormorphsyn> nuoraidvuostáváldimis.</p>",  # noqa: E501
@@ -105,22 +152,24 @@ class TestGramChecker(unittest.TestCase):
                     " nuoraidvuostáváldimis.",
                 ],
                 [
-                    [
-                        "juhkkojuvvo",
-                        9,
-                        20,
-                        "errormorphsyn",
-                        "",
-                        ["juhkkojuvvojedje", "juhkkojuvvojit"],
-                    ],
-                    [
-                        "vuvdojuvvo",
-                        26,
-                        36,
-                        "errormorphsyn",
-                        "",
-                        ["vuvdojuvvojedje", "vuvdojuvvojit"],
-                    ],
+                    ErrorData(
+                        error_string="juhkkojuvvo",
+                        start=9,
+                        end=20,
+                        error_type="errormorphsyn",
+                        explanation="",
+                        suggestions=["juhkkojuvvojedje", "juhkkojuvvojit"],
+                        native_error_type="errormorphsyn",
+                    ),
+                    ErrorData(
+                        error_string="vuvdojuvvo",
+                        start=26,
+                        end=36,
+                        error_type="errormorphsyn",
+                        explanation="",
+                        suggestions=["vuvdojuvvojedje", "vuvdojuvvojit"],
+                        native_error_type="errormorphsyn",
+                    ),
                 ],
             ),
         ]
