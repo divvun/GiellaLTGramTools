@@ -6,6 +6,9 @@
 import sys
 from pathlib import Path
 
+from corpustools import errormarkup  # type: ignore
+from lxml.etree import Element, _Element
+
 from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import GramChecker
 
@@ -19,6 +22,16 @@ class YamlGramChecker(GramChecker):
     @staticmethod
     def print_error(string):
         print(string, file=sys.stderr)
+
+    def make_error_markup(self, text: str) -> _Element:
+        para: _Element = Element("p")
+        try:
+            para.text = text
+            errormarkup.convert_to_errormarkupxml(para)
+        except TypeError:
+            print(f'Error in {self.config["test_file"]}')
+            print(text, "is not a string")
+        return para
 
     def get_variant(self, spec_file: Path):
         (default_pipe, available_variants) = get_pipespecs(spec_file)

@@ -4,13 +4,12 @@
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 import sys
+import time
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
 
 import yaml
-from corpustools import errormarkup  # type: ignore
-from lxml.etree import Element, _Element
 
 from giellaltgramtools.common import COLORS
 from giellaltgramtools.finaloutput import FinalOutput
@@ -99,18 +98,8 @@ class YamlGramTest(GramTest):
 
     @staticmethod
     def yaml_reader(test_file):
-        with test_file.open() as test_file:
-            return yaml.load(test_file, Loader=yaml.FullLoader)
-
-    def make_error_markup(self, text: str) -> _Element:
-        para: _Element = Element("p")
-        try:
-            para.text = text
-            errormarkup.convert_to_errormarkupxml(para)
-        except TypeError:
-            print(f'Error in {self.config["test_file"]}')
-            print(text, "is not a string")
-        return para
+        with test_file.open() as test_file_stream:
+            return yaml.load(test_file_stream, Loader=yaml.FullLoader)
 
     def make_test_results(self) -> Iterable[TestData]:
         if not self.config["tests"]:
@@ -119,7 +108,7 @@ class YamlGramTest(GramTest):
         grammarchecker = YamlGramChecker(self.config)
 
         error_datas = [
-            grammarchecker.paragraph_to_testdata(self.make_error_markup(text))
+            grammarchecker.paragraph_to_testdata(grammarchecker.make_error_markup(text))
             for text in self.config["tests"]
             if text.strip()
         ]
