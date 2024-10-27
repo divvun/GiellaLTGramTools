@@ -4,7 +4,6 @@
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 import sys
-import time
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
@@ -106,38 +105,7 @@ class YamlGramTest(GramTest):
             return []
 
         grammarchecker = YamlGramChecker(self.config)
-
-        error_datas = [
-            grammarchecker.paragraph_to_testdata(grammarchecker.make_error_markup(text))
-            for text in self.config["tests"]
-            if text.strip()
-        ]
-        grammar_datas = grammarchecker.check_paragraphs(
-            "\n".join(error_data[0] for error_data in error_datas)
-        )
-
-        for item in zip(error_datas, grammar_datas, strict=True):
-            test_sentence = item[0][0]
-            gramcheck_sentence = item[1][0]
-            if test_sentence != gramcheck_sentence:
-                print(
-                    "ERROR: GramDivvun has changed test sentence.\n"
-                    f"'{test_sentence}' -> Input to GramDivvun\n"
-                    f"'{gramcheck_sentence}' -> Output from GramDivvun\n",
-                    "Tip: Check the test sentence using the grammar checker modes.",
-                    file=sys.stderr,
-                )
-                sys.exit(99)  # exit code 99 signals hard exit to Make
-
-        return (
-            grammarchecker.clean_data(
-                sentence=item[0][0],
-                expected_errors=item[0][1],
-                gramcheck_errors=item[1][1],
-                filename=self.config["test_file"].name,
-            )
-            for item in zip(error_datas, grammar_datas, strict=True)
-        )
+        return grammarchecker.make_test_results(self.config["tests"])
 
     def move_passes_from_fail(self) -> None:
         if "FAIL" in self.config["test_file"].name and any(self.test_outcomes):

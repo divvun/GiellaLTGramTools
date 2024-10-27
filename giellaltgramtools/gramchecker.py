@@ -5,7 +5,9 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 
 import json
+import multiprocessing
 import subprocess
+from functools import partial
 
 from lxml.etree import _Element
 
@@ -13,28 +15,66 @@ from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.testdata import TestData
 
 
+def check_paragraphs(command: str, paragraphs: list[str]) -> str:
+    """Check grammar of a paragraphs.
+
+    Args:
+        command (str): Command to run
+        paragraphs (str): Lines split by newlines.
+            The grammarchecker checks each line separately.
+    Returns:
+        str: String version of grammarchecker output.
+    """
+    result = subprocess.run(
+        command.split(),
+        input="\n".join(paragraphs).encode("utf-8"),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return result.stdout.decode("utf-8")
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i : i + n]
+
+
+def check_paragraphs_in_parallel(command: str, paragraphs: list[str]) -> str:
+    """Check grammar of paragraphs in parallel.
+
+    Args:
+        command (str): Command to run
+        paragraphs (list): List of paragraphs.
+    Returns:
+        str: String version of grammarchecker outputs.
+    """
+    with_command = partial(check_paragraphs, command)
+    num_processes = multiprocessing.cpu_count()
+    chunked_data = list(chunks(paragraphs, 10))
+
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        strings = pool.map(with_command, chunked_data)
+
+    return "".join(strings)
+
+
 class GramChecker:
     def __init__(self, ignore_typos=False):
         self.ignore_typos = ignore_typos
 
-    def check_paragraphs(self, paragraphs):
-        """Check grammar of a paragraphs.
+    def fix_paragraphs(self, result_str: str) -> list[tuple[str, list[ErrorData]]]:
+        """Fix grammar of a paragraphs.
 
         Args:
-            paragraphs (str): Lines split by newlines.
-                The grammarchecker checks each line separately.
+            result_str: Gramcheck output as a string.
+                Each line is a JSON object containing the grammar checker's
+                result of a single paragraph.
         Returns:
-            list: List of tuples with error text and error data.
+            list: List of tuples containing input sentence and error data.
         """
-        result = subprocess.run(
-            self.checker.split(),
-            input=paragraphs.encode("utf-8"),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=True,
-        )
-
-        lines = result.stdout.decode("utf-8").strip().split("\n")
+        lines = result_str.strip().split("\n")
         return [
             (gram_error.get("text"), self.fix_all_errors(gram_error.get("errs")))
             for gram_error in json.loads(f"[{','.join(lines)}]")

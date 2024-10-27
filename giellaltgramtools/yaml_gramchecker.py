@@ -5,12 +5,14 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 import sys
 from pathlib import Path
+from typing import Iterator
 
 from corpustools import errormarkup  # type: ignore
 from lxml.etree import Element, _Element
 
 from giellaltgramtools.common import get_pipespecs
-from giellaltgramtools.gramchecker import GramChecker
+from giellaltgramtools.gramchecker import GramChecker, check_paragraphs_in_parallel
+from giellaltgramtools.testdata import TestData
 
 
 class YamlGramChecker(GramChecker):
@@ -67,3 +69,37 @@ class YamlGramChecker(GramChecker):
         )
 
         return f"divvun-checker {checker_spec} {self.get_variant(spec_file)}"
+
+    def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
+        error_datas = [
+            self.paragraph_to_testdata(self.make_error_markup(text))
+            for text in tests
+            if text.strip()
+        ]
+        result_str = check_paragraphs_in_parallel(
+            self.checker, [error_data[0] for error_data in error_datas]
+        )
+        grammar_datas = self.fix_paragraphs(result_str)
+
+        for item in zip(error_datas, grammar_datas, strict=True):
+            test_sentence = item[0][0]
+            gramcheck_sentence = item[1][0]
+            if test_sentence != gramcheck_sentence:
+                print(
+                    "ERROR: GramDivvun has changed test sentence.\n"
+                    f"'{test_sentence}' -> Input to GramDivvun\n"
+                    f"'{gramcheck_sentence}' -> Output from GramDivvun\n",
+                    "Tip: Check the test sentence using the grammar checker modes.",
+                    file=sys.stderr,
+                )
+                sys.exit(99)  # exit code 99 signals hard exit to Make
+
+        return (
+            self.clean_data(
+                sentence=item[0][0],
+                expected_errors=item[0][1],
+                gramcheck_errors=item[1][1],
+                filename=self.config["test_file"].name,
+            )
+            for item in zip(error_datas, grammar_datas, strict=True)
+        )
