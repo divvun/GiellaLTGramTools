@@ -3,7 +3,9 @@
 # Copyright © 2020-2024 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
+import re
 import sys
+from collections import Counter
 from io import StringIO
 from pathlib import Path
 from typing import Iterable
@@ -83,12 +85,37 @@ class YamlGramTest(GramTest):
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
-        dupes = "\n".join(
-            {f"\t{test}" for test in config["tests"] if config["tests"].count(test) > 1}
+        counted_tests = Counter(config["tests"])
+        dupes = {
+            counted_test
+            for counted_test in counted_tests.items()
+            if counted_test[1] > 1
+        }
+
+        test_re = re.compile(
+            r"""^(\s*-\s+)(?P<test>("[^"]+"|'[^']+')).*$""", re.UNICODE
         )
-        if dupes:  # check for duplicates
+
+        if dupes:  # remove duplicates
+            with StringIO() as temp_stream:
+                with config["test_file"].open("r") as _input:
+                    for line in _input:
+                        match = test_re.search(line.rstrip())
+                        if not match:
+                            temp_stream.write(line)
+                            continue
+
+                        test_string = match.group("test")[1:-1]
+                        if match and match.group("test"):
+                            if counted_tests.get(test_string) > 1:
+                                counted_tests[test_string] -= 1
+                            else:
+                                temp_stream.write(line)
+                config["test_file"].open("w").write(temp_stream.getvalue())
+
             print(
-                f"ERROR: Remove the following dupes in {config['test_file']}\n{dupes}",
+                f"ERROR: Removed the following dupes in {config['test_file']}\n"
+                f"{'\n'.join(f'\t{dupe[0]}' for dupe in dupes)}",
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
@@ -116,11 +143,15 @@ class YamlGramTest(GramTest):
             ]
 
             pass_path = Path(str(self.config["test_file"]).replace("FAIL", "PASS"))
+            if not pass_path.exists():
+                pass_data = self.yaml_reader(self.config["test_file"])
+                del pass_data["Tests"]
+                pass_path.write_text(yaml.dump(pass_data) + "\nTests:\n")
+
             with pass_path.open("a") as pass_stream:
-                print(
-                    "\n".join([f'  - "{this_test}"' for this_test in passing_tests]),
-                    file=pass_stream,
-                )
+                for this_test in passing_tests:
+                    quote_mark = "'" if '"' in this_test else '"'
+                    print(f"  - {quote_mark}{this_test}{quote_mark}", file=pass_stream)
 
             with StringIO() as temp_stream:
                 with self.config["test_file"].open("r") as _input:
