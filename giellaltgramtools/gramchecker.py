@@ -369,7 +369,7 @@ class GramChecker:
         errors: list[ErrorData | None] = []
         self.extract_error_info(parts, errors, para)
 
-        sentence = "".join(parts)
+        sentence = "".join(parts).replace("\n", " ")
 
         return sentence, [error for error in errors if error is not None]
 

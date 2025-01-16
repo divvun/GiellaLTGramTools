@@ -13,7 +13,6 @@ from lxml.etree import _Element, _ElementTree, parse
 
 from giellaltgramtools.common import COLORS
 from giellaltgramtools.corpus_gramchecker import CorpusGramChecker
-from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.normaloutput import NormalOutput
 from giellaltgramtools.testdata import TestData
@@ -83,9 +82,7 @@ class CorpusGramTest(GramTest):
 
             parent.remove(url)
 
-    def get_error_data(
-        self, filename: str, grammarchecker: CorpusGramChecker
-    ) -> Iterable[tuple[str, list[ErrorData]]]:
+    def get_error_data(self, filename: str) -> Iterable[_Element]:
         root: _ElementTree = parse(filename)
         self.keep_url(root)
         for para in root.iter("p"):
@@ -93,22 +90,15 @@ class CorpusGramTest(GramTest):
             # language. These paragraphs are not included in the test.
             if not para.get("{http://www.w3.org/XML/1998/namespace}lang"):
                 self.flatten_para(para)
-                yield grammarchecker.paragraph_to_testdata(para)
+                yield para
 
     def make_test_results(self) -> Iterable[TestData]:
         grammarchecker = CorpusGramChecker(self.config)
 
-        for filename in ccat.find_files(self.targets, ".xml"):
-            root = parse(filename)
-            self.keep_url(root)
-            error_datas = list(self.get_error_data(filename, grammarchecker))
-            grammar_datas = grammarchecker.check_paragraphs(
-                "\n".join(error_data[0].rstrip() for error_data in error_datas)
+        return (
+            test_data
+            for filename in ccat.find_files(self.targets, ".xml")
+            for test_data in grammarchecker.make_test_results(
+                self.get_error_data(filename), filename=filename
             )
-            for item in zip(error_datas, grammar_datas, strict=True):
-                yield grammarchecker.clean_data(
-                    sentence=item[0][0],
-                    expected_errors=item[0][1],
-                    gramcheck_errors=item[1][1],
-                    filename=filename,
-                )
+        )
