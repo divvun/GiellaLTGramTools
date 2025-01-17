@@ -115,7 +115,7 @@ class YamlGramTest(GramTest):
 
             print(
                 f"ERROR: Removed the following dupes in {config['test_file']}\n"
-                f"{'\n'.join(f'\t{dupe[0]}' for dupe in dupes)}",
+                "\n".join("\t" + dupe[0] for dupe in dupes),
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
