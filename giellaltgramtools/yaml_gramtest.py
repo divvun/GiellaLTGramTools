@@ -85,6 +85,12 @@ class YamlGramTest(GramTest):
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
+
+        self.remove_dupes(config)
+        return config
+
+    def remove_dupes(self, config):
+        """Remove duplicate tests from the test file"""
         counted_tests = Counter(config["tests"])
         dupes = {
             counted_test
@@ -119,8 +125,6 @@ class YamlGramTest(GramTest):
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
-
-        return config
 
     @staticmethod
     def yaml_reader(test_file):
