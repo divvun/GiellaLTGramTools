@@ -83,16 +83,6 @@ class GramChecker:
         ]
 
     @staticmethod
-    def remove_dupes(double_spaces, d_errors):
-        for removable_error in [
-            d_error
-            for double_space in double_spaces
-            for d_error in d_errors
-            if double_space[1:2] == d_error[1:2]
-        ]:
-            d_errors.remove(removable_error)
-
-    @staticmethod
     def sort_by_range(
         error: tuple[str, int, int, str, str, list[str], str],
     ) -> tuple[int]:
