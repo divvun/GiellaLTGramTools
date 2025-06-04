@@ -8,6 +8,7 @@ import json
 import multiprocessing
 import subprocess
 from functools import partial
+from typing import Iterator
 
 from lxml.etree import _Element
 
@@ -35,7 +36,7 @@ def check_paragraphs(command: str, paragraphs: list[str]) -> str:
     return result.stdout.decode("utf-8")
 
 
-def chunks(lst, n):
+def chunks(lst: list[str], n: int) -> Iterator[list[str]]:
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i : i + n]
@@ -61,7 +62,7 @@ def check_paragraphs_in_parallel(command: str, paragraphs: list[str]) -> str:
 
 
 class GramChecker:
-    def __init__(self, ignore_typos=False):
+    def __init__(self, ignore_typos: bool = False):
         self.ignore_typos = ignore_typos
         self.checker = ""
 
@@ -92,18 +93,41 @@ class GramChecker:
             d_errors.remove(removable_error)
 
     @staticmethod
-    def sort_by_range(error):
+    def sort_by_range(
+        error: tuple[str, int, int, str, str, list[str], str],
+    ) -> tuple[int]:
         return error[1:2]
 
-    def add_part(self, part, start, end, d_errors):
+    def add_part(
+        self,
+        part: str,
+        start: int,
+        end: int,
+        d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+    ) -> None:
         res = check_paragraphs(self.checker, [part])
         res_as_dict = json.loads(res.strip())
+        errors: list[tuple[str, int, int, str, str, list[str], str]] = res_as_dict[
+            "errs"
+        ]
         for error in [error for error in errors if error]:
-            candidate = [error[0], start, end, error[3], error[4], error[5], error[6]]
+            candidate: tuple[str, int, int, str, str, list[str], str] = (
+                error[0],
+                start,
+                end,
+                error[3],
+                error[4],
+                error[5],
+                error[6],
+            )
             if candidate not in d_errors:
                 d_errors.append(candidate)
 
-    def fix_no_space_before_parent_start(self, space_error, d_errors):
+    def fix_no_space_before_parent_start(
+        self,
+        space_error: tuple[str, int, int, str, str, list[str], str],
+        d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+    ) -> None:
         for dupe in [
             d_error for d_error in d_errors if d_error[1:2] == space_error[1:2]
         ]:
@@ -111,7 +135,7 @@ class GramChecker:
 
         parenthesis = space_error[0].find("(")
         d_errors.append(
-            [
+            (
                 space_error[0][parenthesis:],
                 space_error[1] + parenthesis,
                 space_error[2],
@@ -119,7 +143,7 @@ class GramChecker:
                 space_error[4],
                 [" ("],
                 space_error[6],
-            ]
+            )
         )
         part1 = space_error[0][:parenthesis]
         start = space_error[1]
@@ -135,7 +159,9 @@ class GramChecker:
 
         d_errors.sort(key=self.sort_by_range)
 
-    def fix_hidden_by_aistton(self, d_errors) -> list:
+    def fix_hidden_by_aistton(
+        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
+    ) -> list[tuple[str, int, int, str, str, list[str], str]]:
         """Fix errors hidden by aistton-both errors.
 
         A GramDivvun error of type aistton-both can contain some other error.
@@ -150,16 +176,20 @@ class GramChecker:
             list: List of GramDivvun errors with the hidden errors revealed.
         """
 
-        def is_hidden_error(error):
+        def is_hidden_error(
+            error: tuple[str, int, int, str, str, list[str], str],
+        ) -> bool:
             return (error[1], error[2]) in aistton_ranges and error[3] not in [
                 "punct-aistton-both",
                 "punct-aistton-left",
                 "punct-aistton-right",
             ]
 
-        def fix_hidden_error(error):
+        def fix_hidden_error(
+            error: tuple[str, int, int, str, str, list[str], str],
+        ) -> tuple[str, int, int, str, str, list[str], str]:
             if error[3] == "punct-aistton-left":
-                return [
+                return (
                     error[0][1:],
                     error[1] + 1,
                     error[2],
@@ -167,9 +197,9 @@ class GramChecker:
                     error[4],
                     [suggestion[1:] for suggestion in error[5]],
                     error[6],
-                ]
+                )
             if error[3] == "punct-aistton-right":
-                return [
+                return (
                     error[0][:-1],
                     error[1],
                     error[2] - 1,
@@ -177,9 +207,9 @@ class GramChecker:
                     error[4],
                     [suggestion[:-1] for suggestion in error[5]],
                     error[6],
-                ]
+                )
 
-            return [
+            return (
                 error[0][1:-1],
                 error[1] + 1,
                 error[2] - 1,
@@ -187,7 +217,7 @@ class GramChecker:
                 error[4],
                 [suggestion[1:-1] for suggestion in error[5]],
                 error[6],
-            ]
+            )
 
         aistton_ranges = [
             (error[1], error[2])
@@ -200,7 +230,9 @@ class GramChecker:
             for error in d_errors
         ]
 
-    def fix_aistton(self, d_errors):
+    def fix_aistton(
+        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
+    ) -> Iterator[tuple[str, int, int, str, str, list[str], str]]:
         """Rearrange GramDivvun aistton errors to match the Giella markup format.
 
         GramDivvun marks up errors with wrong quotemarks by including the word next to
@@ -219,7 +251,7 @@ class GramChecker:
             # punct-aistton-left and punct-aistton-right
             if d_error[3] != "punct-aistton":
                 if d_error[3] == "punct-aistton-both":
-                    yield [
+                    yield (
                         d_error[0][0],
                         d_error[1],
                         d_error[1] + 1,
@@ -227,8 +259,8 @@ class GramChecker:
                         d_error[4],
                         ["”"],
                         d_error[6],
-                    ]
-                    yield [
+                    )
+                    yield (
                         d_error[0][-1],
                         d_error[2] - 1,
                         d_error[2],
@@ -236,9 +268,9 @@ class GramChecker:
                         d_error[4],
                         ["”"],
                         d_error[6],
-                    ]
+                    )
                 elif d_error[3] == "punct-aistton-left":
-                    yield [
+                    yield (
                         d_error[0][0],
                         d_error[1],
                         d_error[1] + 1,
@@ -246,9 +278,9 @@ class GramChecker:
                         d_error[4],
                         ["”"],
                         d_error[6],
-                    ]
+                    )
                 elif d_error[3] == "punct-aistton-right":
-                    yield [
+                    yield (
                         d_error[0][-1],
                         d_error[2] - 1,
                         d_error[2],
@@ -256,21 +288,22 @@ class GramChecker:
                         d_error[4],
                         ["”"],
                         d_error[6],
-                    ]
+                    )
                 else:
                     yield d_error
 
-    def get_error_corrections(self, para):
-        parts = []
+    def get_error_corrections(self, para: _Element) -> str:
+        parts: list[str] = []
         if para.text is not None:
             parts.append(para.text)
         for child in para:
             if child.tag != "correct":
                 correct = child.find("./correct")
-                parts.append(correct.text if correct.text is not None else "")
-                for grandchild in child:
-                    if grandchild.tag != "correct":
-                        parts.append(self.get_error_corrections(grandchild))
+                if correct is not None:
+                    parts.append(correct.text if correct.text is not None else "")
+                    for grandchild in child:
+                        if grandchild.tag != "correct":
+                            parts.append(self.get_error_corrections(grandchild))
 
         if not len(para) and para.tail:
             parts.append(para.tail)
@@ -278,7 +311,7 @@ class GramChecker:
         return "".join(parts)
 
     @staticmethod
-    def is_non_nested_error(para):
+    def is_non_nested_error(para: _Element) -> bool:
         """Check if the only children are correct elements."""
         return all(child.tag == "correct" for child in para)
 
@@ -327,12 +360,16 @@ class GramChecker:
 
         return info
 
-    def fix_all_errors(self, d_errors):
+    def fix_all_errors(
+        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
+    ) -> list[tuple[str, int, int, str, str, list[str], str]]:
         """Remove errors that cover the same area of the typo and msyn types."""
 
-        def report_dupes(errors):
-            found_errors = set()
-            index_set = set()
+        def report_dupes(
+            errors: list[tuple[str, int, int, str, str, list[str], str]],
+        ) -> None:
+            found_errors: set[str] = set()
+            index_set: set[int] = set()
             for error1 in errors:
                 for error2 in errors:
                     if error1[:3] == error2[:3] and error1 != error2:
