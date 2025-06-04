@@ -87,8 +87,8 @@ class GramChecker:
     @staticmethod
     def sort_by_range(
         error: tuple[str, int, int, str, str, list[str], str],
-    ) -> tuple[int]:
-        return error[1:2]
+    ) -> list[int]:
+        return list(error[1:3])
 
     def add_part(
         self,
@@ -121,7 +121,7 @@ class GramChecker:
         d_errors: list[tuple[str, int, int, str, str, list[str], str]],
     ) -> None:
         for dupe in [
-            d_error for d_error in d_errors if d_error[1:2] == space_error[1:2]
+            d_error for d_error in d_errors if d_error[1:3] == space_error[1:3]
         ]:
             d_errors.remove(dupe)
 
