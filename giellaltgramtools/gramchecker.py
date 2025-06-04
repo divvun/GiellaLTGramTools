@@ -383,14 +383,6 @@ class GramChecker:
 
         return d_errors
 
-    @staticmethod
-    def error_markup_needs_normalisation(error: ErrorData) -> bool:
-        return (
-            error.error_type == "errorformat"
-            and error.explanation == "notspace"
-            and "  " in error.error_string
-        )
-
     def paragraph_to_testdata(self, para: _Element) -> tuple[str, list[ErrorData]]:
         """Extract sentence and markup errors."""
         parts: list[str] = []
