@@ -107,7 +107,7 @@ def yaml(ctx, silent, output, yaml_file):
     is_flag=True,
 )
 @click.pass_context
-def xml(ctx, count_typos, targets):
+def xml(ctx: click.Context, count_typos: bool, targets: list[str]):
     """Test XML files."""
     try:
         tester = CorpusGramTest(ctx.obj, count_typos, targets)

@@ -6,7 +6,7 @@
 
 
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 from corpustools import ccat  # type: ignore
 from lxml.etree import _Element, _ElementTree, parse
@@ -23,7 +23,7 @@ class CorpusGramTest(GramTest):
         super().__init__()
         self.targets = targets
 
-        self.config = {
+        self.config: dict[str, Any] = {
             "out": NormalOutput(args),
             "ignore_typos": ignore_typos,
             "spec": Path(args.get("spec", "")),
