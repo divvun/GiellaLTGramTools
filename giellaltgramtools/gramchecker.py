@@ -315,7 +315,7 @@ class GramChecker:
             correct = para.find("./correct")
             info = ErrorData(
                 error_string=(
-                    self.get_error_corrections(para) if len(para) else para.text
+                    self.get_error_corrections(para) if len(para) else (para.text or "")
                 ),
                 start=len("".join(parts)),
                 end=None,
