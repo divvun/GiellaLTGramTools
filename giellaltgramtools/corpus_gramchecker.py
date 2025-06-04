@@ -6,7 +6,7 @@
 
 import sys
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 from lxml.etree import _Element
 
@@ -18,13 +18,13 @@ from giellaltgramtools.testdata import TestData
 class CorpusGramChecker(GramChecker):
     """Check for grammarerrors in errormarkup files from a Giella corpus."""
 
-    def __init__(self, config):
-        super().__init__(config.get("ignore_typos"))
+    def __init__(self, config: dict[str, Any]):
+        super().__init__(config.get("ignore_typos", False))
         self.config = config
         self.checker = self.app()
 
     @staticmethod
-    def print_error(string):
+    def print_error(string: str) -> None:
         print(string, file=sys.stderr)
 
     def get_variant(self, spec_file: Path):
