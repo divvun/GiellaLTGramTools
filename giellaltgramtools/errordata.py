@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 class ErrorData:
     error_string: str
     start: int
-    end: int | None
+    end: int
     error_type: str
     explanation: str
     suggestions: list[str] = field(default_factory=list)
