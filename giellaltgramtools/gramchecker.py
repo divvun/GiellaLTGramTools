@@ -318,7 +318,7 @@ class GramChecker:
                     self.get_error_corrections(para) if len(para) else (para.text or "")
                 ),
                 start=len("".join(parts)),
-                end=None,
+                end=-1,  # Will be set later
                 error_type=para.tag,
                 explanation=(
                     correct.attrib.get("errorinfo", default="")
@@ -342,6 +342,7 @@ class GramChecker:
                 else:
                     self.extract_error_info(parts, errors, child)
 
+        # Now there is enough information to set the end position
         if info is not None and para.tag.startswith("error"):
             info.end = len("".join(parts))
 
