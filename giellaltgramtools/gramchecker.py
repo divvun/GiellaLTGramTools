@@ -63,6 +63,7 @@ def check_paragraphs_in_parallel(command: str, paragraphs: list[str]) -> str:
 class GramChecker:
     def __init__(self, ignore_typos=False):
         self.ignore_typos = ignore_typos
+        self.checker = ""
 
     def fix_paragraphs(self, result_str: str) -> list[tuple[str, list[ErrorData]]]:
         """Fix grammar of a paragraphs.
@@ -95,8 +96,8 @@ class GramChecker:
         return error[1:2]
 
     def add_part(self, part, start, end, d_errors):
-        res = self.check_grammar(part)
-        errors = res["errs"]
+        res = check_paragraphs(self.checker, [part])
+        res_as_dict = json.loads(res.strip())
         for error in [error for error in errors if error]:
             candidate = [error[0], start, end, error[3], error[4], error[5], error[6]]
             if candidate not in d_errors:
