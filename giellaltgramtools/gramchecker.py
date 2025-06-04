@@ -401,7 +401,11 @@ class GramChecker:
 
         return sentence, [error for error in errors if error is not None]
 
-    def remove_foreign(self, marked_errors, found_errors):
+    def remove_foreign(
+        self,
+        marked_errors: list[ErrorData],
+        found_errors: list[tuple[str, int, int, str, str, list[str], str]],
+    ):
         """Remove foreign language error elements."""
         foreign_ranges = [
             (marked_error.start, marked_error.end)
@@ -425,7 +429,11 @@ class GramChecker:
             ],
         )
 
-    def remove_typo(self, marked_errors, found_errors):
+    def remove_typo(
+        self,
+        marked_errors: list[ErrorData],
+        found_errors: list[tuple[str, int, int, str, str, list[str], str]],
+    ) -> tuple[list[ErrorData], list[tuple[str, int, int, str, str, list[str], str]]]:
         """Remove foreign language error elements."""
         return (
             [
@@ -440,7 +448,7 @@ class GramChecker:
         self,
         sentence: str,
         expected_errors: list[ErrorData],
-        gramcheck_errors: list,
+        gramcheck_errors: list[tuple[str, int, int, str, str, list[str], str]],
         filename: str,
     ) -> TestData:
         """Extract data for reporting from a paragraph."""
