@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any, Iterable
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # pyright: ignore[reportPrivateUsage]
 
 from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import GramChecker, check_paragraphs_in_parallel

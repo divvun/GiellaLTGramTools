@@ -10,7 +10,7 @@ import subprocess
 from functools import partial
 from typing import Iterator
 
-from lxml.etree import _Element
+from lxml.etree import _Element  # pyright: ignore[reportPrivateUsage]
 
 from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.testdata import TestData
