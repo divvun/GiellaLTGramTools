@@ -66,6 +66,7 @@ def engine_comparator(directory_name: str):
                 divvun_checker_results, key=lambda x: x.get("text", "")
             )
 
+            mismatch_count = 0
             for divvun_checker_result, divvun_runtime_result in zip(
                 divvun_checker_results, divvun_runtime_results, strict=True
             ):
@@ -89,6 +90,7 @@ def engine_comparator(directory_name: str):
                             checker_dicts, divvun_runtime_result, strict=True
                         )
                     ):
+                        mismatch_count += 1
                         print("Mismatch found!")
                         print("divvun-checker result:")
                         print(
@@ -103,7 +105,10 @@ def engine_comparator(directory_name: str):
                             )
                         )
                         print("----")
-            print(f"Checked {len(paragraphs)} paragraphs in {yaml_file.name}")
+            print(
+                f"Checked {len(paragraphs)} paragraphs in {yaml_file.name}, "
+                f"found {mismatch_count} mismatches"
+            )
 
 
 def has_same_attributes(checker_result: dict, runtime_result: dict) -> bool:
