@@ -23,6 +23,7 @@ from pathlib import Path
 
 import click
 
+from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
 from giellaltgramtools.make_grammarchecker_zip import make_archive
 from giellaltgramtools.yaml_gramtest import YamlGramTest
@@ -124,3 +125,13 @@ def xml(ctx: click.Context, count_typos: bool, targets: list[str]):
 def build_archive(pipe_spec: str, archive_name: str):
     """Build the grammar archive."""
     make_archive(pipe_spec, archive_name)
+
+@main.command()
+@click.argument("directory", type=click.Path(exists=True))
+def compare(
+    directory: str
+):
+    """Compare grammar checker results in a directory."""
+    engine_comparator(directory)
+
+
