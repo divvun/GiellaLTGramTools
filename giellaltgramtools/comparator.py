@@ -26,89 +26,87 @@ def engine_comparator(directory_name: str):
         sys.exit(1)
     drb = drb_files[0]
 
-    for i, yaml_file in enumerate(directory.glob("*.yaml")):
-        if i < 1:
-            yaml_content = yaml.load(yaml_file.read_text(), Loader=yaml.FullLoader)
-            paragraphs: list[str] = sorted(
-                {
-                    gramchecker.paragraph_to_testdata(
-                        gramchecker.make_error_markup(text)
-                    )[0]
-                    for text in yaml_content.get("Tests", [])
-                    if text.strip()
-                }
-            )
-            divvun_runtime_results = [
-                json.loads(
-                    "\n".join(
-                        subprocess.run(
-                            f"divvun-runtime run --path {drb}".split(),
-                            input=paragraph.encode("utf-8"),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            check=True,
-                        )
-                        .stdout.decode("utf-8")
-                        .splitlines()[1:]
-                    )
-                )
-                for paragraph in paragraphs
-            ]
-            divvun_checker_lines = (
-                check_paragraphs_in_parallel(
-                    command=f"divvun-checker --archive {zcheck}", paragraphs=paragraphs
-                )
-                .strip()
-                .splitlines()
-            )
-            divvun_checker_results = json.loads(f"[{','.join(divvun_checker_lines)}]")
-            divvun_checker_results = sorted(
-                divvun_checker_results, key=lambda x: x.get("text", "")
-            )
-
-            mismatch_count = 0
-            for divvun_checker_result, divvun_runtime_result in zip(
-                divvun_checker_results, divvun_runtime_results, strict=True
-            ):
-                errs = divvun_checker_result.get("errs", [])
-                checker_dicts = [
-                    {
-                        "form": err[0],
-                        "beg": err[1],
-                        "end": err[2],
-                        "err": err[3],
-                        "rep": err[5],
-                    }
-                    for err in errs
+    for yaml_file in directory.glob("*.yaml"):
+        yaml_content = yaml.load(yaml_file.read_text(), Loader=yaml.FullLoader)
+        paragraphs: list[str] = sorted(
+            {
+                gramchecker.paragraph_to_testdata(gramchecker.make_error_markup(text))[
+                    0
                 ]
-                if errs and divvun_runtime_result:
-                    # print("Checker dicts:", checker_dicts)
-                    # print("Runtime dicts:", divvun_runtime_result)
-                    if len(checker_dicts) != len(divvun_runtime_result) or not all(
-                        has_same_attributes(d, r)
-                        for d, r in zip(
-                            checker_dicts, divvun_runtime_result, strict=True
-                        )
-                    ):
-                        mismatch_count += 1
-                        print("Mismatch found!")
-                        print("divvun-checker result:")
-                        print(
-                            json.dumps(
-                                divvun_checker_result, indent=2, ensure_ascii=False
-                            )
-                        )
-                        print("divvun-runtime result:")
-                        print(
-                            json.dumps(
-                                divvun_runtime_result, indent=2, ensure_ascii=False
-                            )
-                        )
-                        print("----")
-            print(
-                f"Checked {len(paragraphs)} paragraphs in {yaml_file.name}, "
-                f"found {mismatch_count} mismatches"
+                for text in yaml_content.get("Tests", [])
+                if text.strip()
+            }
+        )
+        divvun_runtime_results = []
+        for paragraph in paragraphs:
+            result = "\n".join(
+                subprocess.run(
+                    f"divvun-runtime run --path {drb}".split(),
+                    input=paragraph.encode("utf-8"),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True,
+                )
+                .stdout.decode("utf-8")
+                .splitlines()[1:]
             )
+            try:
+                json_result = json.loads(result)
+                divvun_runtime_results.append(json_result)  # type: ignore
+            except json.JSONDecodeError as err:
+                raise SystemExit(
+                    f"{paragraph} produced invalid JSON: {result}"
+                ) from err
+
+        divvun_checker_lines = (
+            check_paragraphs_in_parallel(
+                command=f"divvun-checker --archive {zcheck}", paragraphs=paragraphs
+            )
+            .strip()
+            .splitlines()
+        )
+        divvun_checker_results = json.loads(f"[{','.join(divvun_checker_lines)}]")
+        divvun_checker_results = sorted(
+            divvun_checker_results, key=lambda x: x.get("text", "")
+        )
+
+        mismatch_count = 0
+        for divvun_checker_result, divvun_runtime_result in zip(
+            divvun_checker_results, divvun_runtime_results, strict=True
+        ):
+            errs = divvun_checker_result.get("errs", [])
+            checker_dicts = [
+                {
+                    "form": err[0],
+                    "beg": err[1],
+                    "end": err[2],
+                    "err": err[3],
+                    "rep": err[5],
+                }
+                for err in errs
+            ]
+            if errs and divvun_runtime_result:
+                # print("Checker dicts:", checker_dicts)
+                # print("Runtime dicts:", divvun_runtime_result)
+                if len(checker_dicts) != len(divvun_runtime_result) or not all(
+                    has_same_attributes(d, r)
+                    for d, r in zip(checker_dicts, divvun_runtime_result, strict=True)
+                ):
+                    mismatch_count += 1
+                    print("Mismatch found!")
+                    print("divvun-checker result:")
+                    print(
+                        json.dumps(divvun_checker_result, indent=2, ensure_ascii=False)
+                    )
+                    print("divvun-runtime result:")
+                    print(
+                        json.dumps(divvun_runtime_result, indent=2, ensure_ascii=False)
+                    )
+                    print("----")
+        print(
+            f"Checked {len(paragraphs)} paragraphs in {yaml_file.name}, "
+            f"found {mismatch_count} mismatches"
+        )
 
 
 def has_same_attributes(checker_result: dict, runtime_result: dict) -> bool:
