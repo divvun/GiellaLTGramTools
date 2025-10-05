@@ -353,37 +353,49 @@ class GramChecker:
 
         return info
 
-    def fix_all_errors(
+    def _find_duplicate_errors(
+        self, errors: list[tuple[str, int, int, str, str, list[str], str]]
+    ) -> set[int]:
+        """Find indices of duplicate errors that should be removed."""
+        found_errors: set[str] = set()
+        index_set: set[int] = set()
+
+        for error1 in errors:
+            for error2 in errors:
+                if error1[:3] == error2[:3] and error1 != error2:
+                    if (
+                        str(error1) not in found_errors
+                        and str(error2) not in found_errors
+                    ):
+                        found_errors.add(str(error1))
+                        found_errors.add(str(error2))
+                        index_set.add(errors.index(error1))
+
+        return index_set
+
+    def _remove_duplicate_errors(
+        self, errors: list[tuple[str, int, int, str, str, list[str], str]]
+    ) -> None:
+        """Remove duplicate errors from the list."""
+        duplicate_indices = self._find_duplicate_errors(errors)
+        for pos in sorted(duplicate_indices, reverse=True):
+            del errors[pos]
+
+    def _process_special_errors(
         self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> list[tuple[str, int, int, str, str, list[str], str]]:
-        """Remove errors that cover the same area of the typo and msyn types."""
-
-        def report_dupes(
-            errors: list[tuple[str, int, int, str, str, list[str], str]],
-        ) -> None:
-            found_errors: set[str] = set()
-            index_set: set[int] = set()
-            for error1 in errors:
-                for error2 in errors:
-                    if error1[:3] == error2[:3] and error1 != error2:
-                        if (
-                            str(error1) not in found_errors
-                            and str(error2) not in found_errors
-                        ):
-                            found_errors.add(str(error1))
-                            found_errors.add(str(error2))
-                            index_set.add(errors.index(error1))
-
-            for pos in sorted(index_set, reverse=True):
-                del errors[pos]
-
-        d_errors = list(self.fix_aistton(d_errors))
+    ) -> None:
+        """Process special error types that need custom handling."""
         for d_error in d_errors:
             if d_error[3] == "no-space-before-parent-start":
                 self.fix_no_space_before_parent_start(d_error, d_errors)
 
-        report_dupes(d_errors)
-
+    def fix_all_errors(
+        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
+    ) -> list[tuple[str, int, int, str, str, list[str], str]]:
+        """Remove errors that cover the same area of the typo and msyn types."""
+        d_errors = list(self.fix_aistton(d_errors))
+        self._process_special_errors(d_errors)
+        self._remove_duplicate_errors(d_errors)
         return d_errors
 
     def paragraph_to_testdata(self, para: _Element) -> tuple[str, list[ErrorData]]:
