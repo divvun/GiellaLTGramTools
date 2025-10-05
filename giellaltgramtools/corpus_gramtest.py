@@ -52,33 +52,42 @@ class CorpusGramTest(GramTest):
         for child in para:
             self.flatten_para(child)
 
-    def keep_url(self, root: _ElementTree) -> None:  # noqa: PLR0912, C901
+    def _add_text_to_previous(self, url: _Element, previous: _Element) -> None:
+        """Add URL text and tail to previous element."""
+        if url.text is not None:
+            if previous.tail is not None:
+                previous.tail += url.text
+            else:
+                previous.tail = url.text
+        if url.tail is not None:
+            if previous.tail is not None:
+                previous.tail += url.tail
+            else:
+                previous.tail = url.tail
+
+    def _add_text_to_parent(self, url: _Element, parent: _Element) -> None:
+        """Add URL text and tail to parent element."""
+        if url.text is not None:
+            if parent.text is not None:
+                parent.text += url.text
+            else:
+                parent.text = url.text
+        if url.tail is not None:
+            if parent.text is not None:
+                parent.text += url.tail
+            else:
+                parent.text = url.tail
+
+    def keep_url(self, root: _ElementTree) -> None:
         """Keep url as plain text."""
         for url in root.xpath('.//errorlang[@correct="url"]'):
             parent = url.getparent()
             previous = url.getprevious()
+
             if previous is not None:
-                if url.text is not None:
-                    if previous.tail is not None:
-                        previous.tail += url.text
-                    else:
-                        previous.tail = url.text
-                if url.tail is not None:
-                    if previous.tail is not None:
-                        previous.tail += url.tail
-                    else:
-                        previous.tail = url.tail
+                self._add_text_to_previous(url, previous)
             else:
-                if url.text is not None:
-                    if parent.text is not None:
-                        parent.text += url.text
-                    else:
-                        parent.text = url.text
-                if url.tail is not None:
-                    if parent.text is not None:
-                        parent.text += url.tail
-                    else:
-                        parent.text = url.tail
+                self._add_text_to_parent(url, parent)
 
             parent.remove(url)
 
