@@ -89,35 +89,47 @@ class YamlGramTest(GramTest):
         self.remove_dupes(config)
         return config
 
-    def remove_dupes(self, config):
-        """Remove duplicate tests from the test file"""
+    def _get_duplicate_tests(self, config):
+        """Identify duplicate tests and return them."""
         counted_tests = Counter(config["tests"])
-        dupes = {
+        return {
             counted_test
             for counted_test in counted_tests.items()
             if counted_test[1] > 1
-        }
+        }, counted_tests
 
+    def _process_test_line(self, line, test_re, counted_tests, temp_stream):
+        """Process a single line from the test file."""
+        match = test_re.search(line.rstrip())
+        if not match:
+            temp_stream.write(line)
+            return
+
+        test_string = match.group("test")[1:-1]
+        if match and match.group("test"):
+            if counted_tests.get(test_string) > 1:
+                counted_tests[test_string] -= 1
+            else:
+                temp_stream.write(line)
+
+    def _write_deduplicated_file(self, config, counted_tests):
+        """Write the file without duplicates."""
         test_re = re.compile(
             r"""^(\s*-\s+)(?P<test>("[^"]+"|'[^']+')).*$""", re.UNICODE
         )
 
-        if dupes:  # remove duplicates
-            with StringIO() as temp_stream:
-                with config["test_file"].open("r") as _input:
-                    for line in _input:
-                        match = test_re.search(line.rstrip())
-                        if not match:
-                            temp_stream.write(line)
-                            continue
+        with StringIO() as temp_stream:
+            with config["test_file"].open("r") as _input:
+                for line in _input:
+                    self._process_test_line(line, test_re, counted_tests, temp_stream)
+            config["test_file"].open("w").write(temp_stream.getvalue())
 
-                        test_string = match.group("test")[1:-1]
-                        if match and match.group("test"):
-                            if counted_tests.get(test_string) > 1:
-                                counted_tests[test_string] -= 1
-                            else:
-                                temp_stream.write(line)
-                config["test_file"].open("w").write(temp_stream.getvalue())
+    def remove_dupes(self, config):
+        """Remove duplicate tests from the test file"""
+        dupes, counted_tests = self._get_duplicate_tests(config)
+
+        if dupes:  # remove duplicates
+            self._write_deduplicated_file(config, counted_tests)
 
             print(
                 f"ERROR: Removed the following dupes in {config['test_file']}\n"
