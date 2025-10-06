@@ -89,20 +89,26 @@ def parse_runtime_output(output: str) -> list[CheckerResult]:
         return []
 
 
-def engine_comparator(directory_name: str):
-    directory = Path(directory_name)
+def get_gramcheck_bundles(directory: Path) -> tuple[Path, Path]:
     zcheck_files = list(directory.parent.glob("*.zcheck"))
     if not zcheck_files:
         print("Warning: No .zcheck file found in parent directory", file=sys.stderr)
         sys.exit(1)
     zcheck = zcheck_files[0]
 
-    gramchecker = YamlGramChecker(config={"spec": zcheck, "test_file": None})
     drb_files = list(directory.parent.glob("*.drb"))
     if not drb_files:
         print("Warning: No .drb file found in parent directory", file=sys.stderr)
         sys.exit(1)
     drb = drb_files[0]
+    return zcheck, drb
+
+
+def engine_comparator(directory_name: str):
+    directory = Path(directory_name)
+    zcheck, drb = get_gramcheck_bundles(directory)
+
+    gramchecker = YamlGramChecker(config={"spec": zcheck, "test_file": None})
 
     for yaml_file in directory.glob("*.yaml"):
         yaml_content = yaml.load(yaml_file.read_text(), Loader=yaml.FullLoader)
