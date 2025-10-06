@@ -67,18 +67,16 @@ def parse_runtime_output(output: str) -> list[CheckerResult]:
     """Parse divvun-runtime output, stripping lines until first '[' and converting to CheckerResult objects."""
     lines = output.splitlines()
 
-    # Find the first line that starts with '['
-    json_start = None
-    for i, line in enumerate(lines):
-        if line.strip().startswith("["):
-            json_start = i
+    # Find the first line that contains String("...")
+    json_str = None
+    for line in lines:
+        if line.strip().startswith('String("') and line.strip().endswith('")'):
+            # Extract JSON from String("...") format
+            json_str = line.strip()[8:-2]  # Remove 'String("' and '")'
             break
 
-    if json_start is None:
+    if json_str is None:
         return []
-
-    # Join remaining lines to form JSON
-    json_str = "\n".join(lines[json_start:])
 
     try:
         json_data = json.loads(json_str)
