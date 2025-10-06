@@ -104,23 +104,27 @@ def get_gramcheck_bundles(directory: Path) -> tuple[Path, Path]:
     return zcheck, drb
 
 
+def get_paragraphs(zcheck: Path, yaml_file: Path) -> list[str]:
+    gramchecker = YamlGramChecker(config={"spec": zcheck, "test_file": None})
+
+    yaml_content = yaml.load(yaml_file.read_text(), Loader=yaml.FullLoader)
+    paragraphs: list[str] = sorted(
+        {
+            gramchecker.paragraph_to_testdata(gramchecker.make_error_markup(text))[0]
+            for text in yaml_content.get("Tests", [])
+            if text.strip()
+        }
+    )
+
+    return paragraphs
+
+
 def engine_comparator(directory_name: str):
     directory = Path(directory_name)
     zcheck, drb = get_gramcheck_bundles(directory)
 
-    gramchecker = YamlGramChecker(config={"spec": zcheck, "test_file": None})
-
     for yaml_file in directory.glob("*.yaml"):
-        yaml_content = yaml.load(yaml_file.read_text(), Loader=yaml.FullLoader)
-        paragraphs: list[str] = sorted(
-            {
-                gramchecker.paragraph_to_testdata(gramchecker.make_error_markup(text))[
-                    0
-                ]
-                for text in yaml_content.get("Tests", [])
-                if text.strip()
-            }
-        )
+        paragraphs = get_paragraphs(zcheck, yaml_file)
         divvun_runtime_results = [
             parse_runtime_output(
                 subprocess.run(
