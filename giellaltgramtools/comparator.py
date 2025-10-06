@@ -3,7 +3,7 @@
 import json
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import yaml
@@ -156,46 +156,88 @@ def get_divvun_checker_results(
     ]
 
 
+def is_known_issue(
+    divvun_runtime_error: CheckerResult, divvun_checker_error: CheckerResult
+) -> bool:
+    if (
+        divvun_runtime_error.err == "typo"
+        and divvun_checker_error.err == "typo"
+        and divvun_runtime_error.rep != divvun_checker_error.rep
+    ):
+        return True
+
+    if (
+        divvun_runtime_error.err != "typo"
+        and divvun_checker_error.err != "typo"
+        and divvun_runtime_error.rep != divvun_checker_error.rep
+    ):
+        return True
+
+    if divvun_runtime_error.err == "typo" and divvun_checker_error.err != "typo":
+        return True
+
+    if divvun_runtime_error.err != "typo" and divvun_checker_error.err == "typo":
+        return True
+
+    return False
+
+
 def make_report(
-    yaml_file: Path,
     paragraphs: list[str],
     divvun_checker_results: list[list[CheckerResult]],
     divvun_runtime_results: list[list[CheckerResult]],
 ):
-    mismatch_count = 0
     for paragraph, divvun_checker_result, divvun_runtime_result in zip(
         paragraphs, divvun_checker_results, divvun_runtime_results, strict=True
     ):
-        if divvun_checker_result and divvun_runtime_result:
-            if len(divvun_checker_result) != len(divvun_runtime_result) or not all(
-                d == r
-                for d, r in zip(
-                    divvun_checker_result, divvun_runtime_result, strict=True
+        if len(divvun_checker_result) != len(divvun_runtime_result):
+            print(paragraph)
+            print("Different number of errors found!")
+            print("divvun-checker result:")
+            print(
+                json.dumps(
+                    [asdict(err) for err in divvun_checker_result],
+                    indent=2,
+                    ensure_ascii=False,
                 )
+            )
+            print("divvun-runtime result:")
+            print(
+                json.dumps(
+                    [asdict(err) for err in divvun_runtime_result],
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
+            print("----")
+        else:
+            for divvun_runtime_error, divvun_checker_error in zip(
+                divvun_runtime_result,
+                divvun_checker_result,
+                strict=True,
             ):
-                mismatch_count += 1
-                print(f"Mismatch for {paragraph} found!")
-                print("divvun-checker result:")
-                print(
-                    json.dumps(
-                        [result.to_dict() for result in divvun_checker_result],
-                        indent=2,
-                        ensure_ascii=False,
+                if (
+                    not is_known_issue(divvun_runtime_error, divvun_checker_error)
+                    and divvun_runtime_error != divvun_checker_error
+                ):
+                    print(f"Mismatch for {paragraph} found!")
+                    print("divvun-checker result:")
+                    print(
+                        json.dumps(
+                            asdict(divvun_checker_error),
+                            indent=2,
+                            ensure_ascii=False,
+                        )
                     )
-                )
-                print("divvun-runtime result:")
-                print(
-                    json.dumps(
-                        [result.to_dict() for result in divvun_runtime_result],
-                        indent=2,
-                        ensure_ascii=False,
+                    print("divvun-runtime result:")
+                    print(
+                        json.dumps(
+                            asdict(divvun_runtime_error),
+                            indent=2,
+                            ensure_ascii=False,
+                        )
                     )
-                )
-                print("----")
-    print(
-        f"Checked {len(paragraphs)} paragraphs in {yaml_file.name}, "
-        f"found {mismatch_count} mismatches"
-    )
+                    print("----")
 
 
 def engine_comparator(directory_name: str):
@@ -203,10 +245,8 @@ def engine_comparator(directory_name: str):
     zcheck, drb = get_gramcheck_bundles(directory)
 
     for yaml_file in directory.glob("*.yaml"):
+        print(f"Comparing runtime and checker results for {yaml_file}...")
         paragraphs = get_paragraphs(zcheck, yaml_file)
         divvun_runtime_results = get_divvun_runtime_results(drb, paragraphs)
         divvun_checker_results = get_divvun_checker_results(zcheck, paragraphs)
-
-        make_report(
-            yaml_file, paragraphs, divvun_checker_results, divvun_runtime_results
-        )
+        make_report(paragraphs, divvun_checker_results, divvun_runtime_results)
