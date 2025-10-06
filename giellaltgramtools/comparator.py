@@ -115,26 +115,18 @@ def engine_comparator(directory_name: str):
                 if text.strip()
             }
         )
-        divvun_runtime_results = []
-        for paragraph in paragraphs:
-            result = "\n".join(
+        divvun_runtime_results = [
+            parse_runtime_output(
                 subprocess.run(
                     f"divvun-runtime run --path {drb}".split(),
                     input=paragraph.encode("utf-8"),
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     check=True,
-                )
-                .stdout.decode("utf-8")
-                .splitlines()[1:]
+                ).stdout.decode("utf-8")
             )
-            try:
-                json_result = json.loads(result)
-                divvun_runtime_results.append(json_result)  # type: ignore
-            except json.JSONDecodeError as err:
-                raise SystemExit(
-                    f"{paragraph} produced invalid JSON: {result}"
-                ) from err
+            for paragraph in paragraphs
+        ]
 
         divvun_checker_lines = (
             check_paragraphs_in_parallel(
@@ -143,9 +135,9 @@ def engine_comparator(directory_name: str):
             .strip()
             .splitlines()
         )
-        divvun_checker_results = json.loads(f"[{','.join(divvun_checker_lines)}]")
         divvun_checker_results = sorted(
-            divvun_checker_results, key=lambda x: x.get("text", "")
+            json.loads(f"[{','.join(divvun_checker_lines)}]"),
+            key=lambda x: x.get("text", ""),
         )
 
         mismatch_count = 0
@@ -153,21 +145,10 @@ def engine_comparator(directory_name: str):
             divvun_checker_results, divvun_runtime_results, strict=True
         ):
             errs = divvun_checker_result.get("errs", [])
-            checker_dicts = [
-                {
-                    "form": err[0],
-                    "beg": err[1],
-                    "end": err[2],
-                    "err": err[3],
-                    "rep": err[5],
-                }
-                for err in errs
-            ]
             if errs and divvun_runtime_result:
-                # print("Checker dicts:", checker_dicts)
-                # print("Runtime dicts:", divvun_runtime_result)
+                checker_dicts = checker_to_checker_results(errs)
                 if len(checker_dicts) != len(divvun_runtime_result) or not all(
-                    has_same_attributes(d, r)
+                    d == r
                     for d, r in zip(checker_dicts, divvun_runtime_result, strict=True)
                 ):
                     mismatch_count += 1
@@ -178,25 +159,14 @@ def engine_comparator(directory_name: str):
                     )
                     print("divvun-runtime result:")
                     print(
-                        json.dumps(divvun_runtime_result, indent=2, ensure_ascii=False)
+                        json.dumps(
+                            [result.to_dict() for result in divvun_runtime_result],
+                            indent=2,
+                            ensure_ascii=False,
+                        )
                     )
                     print("----")
         print(
             f"Checked {len(paragraphs)} paragraphs in {yaml_file.name}, "
             f"found {mismatch_count} mismatches"
         )
-
-
-def has_same_attributes(checker_result: dict, runtime_result: dict) -> bool:
-    mostly_equal: bool = (
-        checker_result.get("form") == runtime_result.get("form")
-        and checker_result.get("beg") == runtime_result.get("beg")
-        and checker_result.get("end") == runtime_result.get("end")
-        and checker_result.get("err") == runtime_result.get("err")
-    )
-
-    if runtime_result.get("err") != "typo":
-        return mostly_equal and checker_result.get("rep", []) == runtime_result.get(
-            "rep", []
-        )
-    return mostly_equal
