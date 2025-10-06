@@ -3,12 +3,64 @@
 import json
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
 
 from giellaltgramtools.gramchecker import check_paragraphs_in_parallel
 from giellaltgramtools.yaml_gramchecker import YamlGramChecker
+
+
+@dataclass
+class CheckerResult:
+    form: str
+    beg: int
+    end: int
+    err: str
+    rep: list[str]
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "CheckerResult":
+        """Create CheckerResult from dictionary, ignoring 'msg' field."""
+        return cls(
+            form=data["form"],
+            beg=data["beg"],
+            end=data["end"],
+            err=data["err"],
+            rep=data["rep"],
+        )
+
+    @classmethod
+    def from_list(cls, data: list) -> "CheckerResult":
+        """Create CheckerResult from list representation."""
+        return cls(
+            form=data[0],
+            beg=data[1],
+            end=data[2],
+            err=data[3],
+            rep=data[5],
+        )
+
+    def to_dict(self) -> dict:
+        """Convert CheckerResult to dictionary for JSON serialization."""
+        return {
+            "form": self.form,
+            "beg": self.beg,
+            "end": self.end,
+            "err": self.err,
+            "rep": self.rep,
+        }
+
+
+def runtime_to_checker_results(json_data: list[dict]) -> list[CheckerResult]:
+    """Convert JSON data to list of CheckerResult objects."""
+    return [CheckerResult.from_dict(item) for item in json_data]
+
+
+def checker_to_checker_results(errs: list[list]) -> list[CheckerResult]:
+    """Convert list of lists to list of CheckerResult objects."""
+    return [CheckerResult.from_list(item) for item in errs]
 
 
 def engine_comparator(directory_name: str):
