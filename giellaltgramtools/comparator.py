@@ -63,6 +63,32 @@ def checker_to_checker_results(errs: list[list]) -> list[CheckerResult]:
     return [CheckerResult.from_list(item) for item in errs]
 
 
+def parse_runtime_output(output: str) -> list[CheckerResult]:
+    """Parse divvun-runtime output, stripping lines until first '[' and converting to CheckerResult objects."""
+    lines = output.splitlines()
+
+    # Find the first line that starts with '['
+    json_start = None
+    for i, line in enumerate(lines):
+        if line.strip().startswith("["):
+            json_start = i
+            break
+
+    if json_start is None:
+        return []
+
+    # Join remaining lines to form JSON
+    json_str = "\n".join(lines[json_start:])
+
+    try:
+        json_data = json.loads(json_str)
+        return runtime_to_checker_results(json_data)
+    except json.JSONDecodeError:
+        print("Error decoding JSON from divvun-runtime output")
+        print(json_str)
+        return []
+
+
 def engine_comparator(directory_name: str):
     directory = Path(directory_name)
     zcheck_files = list(directory.parent.glob("*.zcheck"))
