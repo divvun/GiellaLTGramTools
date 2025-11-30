@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 import click
+from yaml.scanner import ScannerError
 
 from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
@@ -96,6 +97,10 @@ def yaml(ctx, silent, output, yaml_file):
         sys.exit(ret)
     except KeyboardInterrupt:
         sys.exit(130)
+    except ScannerError as error:
+        print(f"YAML Scanner Error in {yaml_file}:", file=sys.stderr)
+        print(error, file=sys.stderr)
+        sys.exit(99)
 
 
 @test.command()
