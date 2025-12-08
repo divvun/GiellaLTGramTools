@@ -236,4 +236,5 @@ def runtime_output_to_checker_json_lines(output: str) -> str:
     # Convert to JSON lines (one JSON object per line)
     json_lines = [json.dumps(result, ensure_ascii=False) for result in checker_results]
     
-    return "\n".join(json_lines)
+    # Ensure each line ends with newline
+    return "\n".join(json_lines) + "\n" if json_lines else ""
