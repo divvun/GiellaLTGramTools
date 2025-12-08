@@ -11,7 +11,11 @@ from corpustools import errormarkup  # type: ignore
 from lxml.etree import Element, _Element
 
 from giellaltgramtools.common import get_pipespecs
-from giellaltgramtools.gramchecker import GramChecker, check_paragraphs_in_parallel
+from giellaltgramtools.gramchecker import (
+    GramChecker,
+    check_paragraphs_in_parallel,
+    check_paragraphs_with_runtime_parallel,
+)
 from giellaltgramtools.testdata import TestData
 
 
@@ -19,6 +23,7 @@ class YamlGramChecker(GramChecker):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.use_runtime = config.get("use_runtime", False)
         self.checker = self.app()
 
     @staticmethod
@@ -62,6 +67,17 @@ class YamlGramChecker(GramChecker):
     def app(self):
         spec_file = self.config.get("spec")
 
+        # Check if we should use divvun-runtime
+        if self.use_runtime:
+            # Use divvun-runtime with .drb bundle or .ts pipeline
+            if spec_file.suffix not in [".drb", ".ts"]:
+                self.print_error(
+                    f"Error: --use-runtime requires a .drb or .ts file, got {spec_file.suffix}"
+                )
+                raise SystemExit(5)
+            return f"divvun-runtime run -p {spec_file}"
+        
+        # Use divvun-checker (default)
         checker_spec = (
             f"--archive {spec_file}"
             if spec_file.suffix == ".zcheck"
@@ -76,9 +92,17 @@ class YamlGramChecker(GramChecker):
             for text in tests
             if text.strip()
         ]
-        result_str = check_paragraphs_in_parallel(
-            self.checker, [error_data[0] for error_data in error_datas]
-        )
+        
+        # Choose checker based on configuration
+        if self.use_runtime:
+            result_str = check_paragraphs_with_runtime_parallel(
+                self.checker, [error_data[0] for error_data in error_datas]
+            )
+        else:
+            result_str = check_paragraphs_in_parallel(
+                self.checker, [error_data[0] for error_data in error_datas]
+            )
+        
         grammar_datas = self.fix_paragraphs(result_str)
 
         for item in zip(error_datas, grammar_datas, strict=True):

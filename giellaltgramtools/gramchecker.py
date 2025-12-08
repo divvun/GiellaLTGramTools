@@ -13,6 +13,7 @@ from typing import Iterator
 from lxml.etree import _Element  # pyright: ignore[reportPrivateUsage]
 
 from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.runtime_parser import runtime_output_to_checker_json_lines
 from giellaltgramtools.testdata import TestData
 
 
@@ -59,6 +60,66 @@ def check_paragraphs_in_parallel(command: str, paragraphs: list[str]) -> str:
         strings = pool.map(with_command, chunked_data)
 
     return "".join(strings)
+
+
+def check_paragraphs_with_runtime(command: str, paragraphs: list[str]) -> str:
+    """Check grammar of paragraphs using divvun-runtime.
+    
+    Calls divvun-runtime for each paragraph and converts output to
+    divvun-checker format (one JSON object per line).
+    
+    Args:
+        command (str): Command to run (e.g., "divvun-runtime run -p <path>")
+        paragraphs (list): List of paragraphs to check
+        
+    Returns:
+        str: Newline-separated JSON objects in divvun-checker format
+    """
+    results = []
+    
+    for paragraph in paragraphs:
+        result = subprocess.run(
+            command.split(),
+            input=paragraph.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,  # Suppress log messages
+            check=True,
+        )
+        
+        # Convert runtime output to checker format
+        output = result.stdout.decode("utf-8")
+        checker_format = runtime_output_to_checker_json_lines(output)
+        results.append(checker_format)
+    
+    return "\n".join(results)
+
+
+def check_paragraphs_with_runtime_parallel(command: str, paragraphs: list[str]) -> str:
+    """Check grammar of paragraphs with divvun-runtime in parallel.
+
+    Args:
+        command (str): Command to run
+        paragraphs (list): List of paragraphs.
+    Returns:
+        str: Newline-separated JSON objects in divvun-checker format
+    """
+    def check_single(paragraph: str) -> str:
+        result = subprocess.run(
+            command.split(),
+            input=paragraph.encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+        )
+        output = result.stdout.decode("utf-8")
+        return runtime_output_to_checker_json_lines(output)
+    
+    num_processes = multiprocessing.cpu_count()
+    
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        results = pool.map(check_single, paragraphs)
+    
+    return "\n".join(results)
 
 
 class GramChecker:

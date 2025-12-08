@@ -49,8 +49,8 @@ def main(ctx):
 @click.option(
     "-s",
     "--spec",
-    help="""Path to the pipespec.xml spec or .zcheck file. Necessary argument for the 
-    xml command, useful for the yaml command when doing out of tree builds.""",
+    help="""Path to the pipespec.xml spec, .zcheck file, .drb bundle, or .ts pipeline. 
+    Necessary argument for the xml command, useful for the yaml command when doing out of tree builds.""",
     type=click.Path(exists=True),
 )
 @click.option(
@@ -58,8 +58,13 @@ def main(ctx):
     "--variant",
     help="""Which variant should be used.""",
 )
+@click.option(
+    "--use-runtime",
+    is_flag=True,
+    help="Use divvun-runtime instead of divvun-checker",
+)
 @click.pass_context
-def test(ctx, colour, hide_passes, spec, variant):  # noqa: PLR0913
+def test(ctx, colour, hide_passes, spec, variant, use_runtime):  # noqa: PLR0913
     """Test the grammars."""
     ctx.ensure_object(dict)
     ctx.obj = {
@@ -67,6 +72,7 @@ def test(ctx, colour, hide_passes, spec, variant):  # noqa: PLR0913
         "hide_passes": hide_passes,
         "spec": spec,
         "variant": variant,
+        "use_runtime": use_runtime,
     }
 
 
