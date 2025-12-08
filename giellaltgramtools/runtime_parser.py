@@ -98,32 +98,51 @@ def split_runtime_output_by_lines(runtime_response: dict[str, Any]) -> list[dict
     processes each line separately. This function splits the runtime output
     to match checker behavior.
     
+    IMPORTANT: This function must convert byte offsets to character offsets
+    before splitting, since line boundaries are defined by character positions.
+    
     Args:
         runtime_response: Parsed JSON from divvun-runtime with keys:
             - text: Full input text (may contain \n)
-            - errors: List of error objects
+            - errors: List of error objects with byte offsets
             - encoding: Text encoding
     
     Returns:
         List of dictionaries, one per line, each with:
             - text: Single line of text
-            - errors: Errors for that line only (with adjusted positions)
+            - errors: Errors for that line only (with character offsets adjusted to line start)
     """
     text = runtime_response.get("text", "")
     all_errors = runtime_response.get("errors", [])
+    
+    # First, convert all error offsets from bytes to characters
+    char_errors = []
+    for error in all_errors:
+        byte_start = error.get("start", 0)
+        byte_end = error.get("end", 0)
+        
+        # Convert byte offsets to character offsets
+        char_start = byte_offset_to_char_offset(text, byte_start)
+        char_end = byte_offset_to_char_offset(text, byte_end)
+        
+        # Create new error with character offsets
+        char_error = error.copy()
+        char_error["start"] = char_start
+        char_error["end"] = char_end
+        char_errors.append(char_error)
     
     # Split text by newlines
     lines = text.split("\n")
     results = []
     
-    # Calculate line boundaries
+    # Calculate line boundaries in character offsets
     line_start = 0
     for line_text in lines:
         line_end = line_start + len(line_text)
         
         # Find errors that fall within this line
         line_errors = []
-        for error in all_errors:
+        for error in char_errors:
             error_start = error.get("start", 0)
             error_end = error.get("end", 0)
             
@@ -163,16 +182,16 @@ def byte_offset_to_char_offset(text: str, byte_offset: int) -> int:
     return len(char_text)
 
 
-def convert_runtime_error_to_checker_format(error: dict[str, Any], text: str) -> list[Any]:
+def convert_runtime_error_to_checker_format(error: dict[str, Any]) -> list[Any]:
     """Convert a divvun-runtime error object to divvun-checker format.
     
-    Runtime format uses byte offsets, checker format uses character offsets.
+    NOTE: This function now expects errors with character offsets (already converted).
     
     Runtime format:
     {
       "form": "leam",
-      "start": 4,  # byte offset
-      "end": 8,    # byte offset
+      "start": 4,  # character offset (already converted from bytes)
+      "end": 8,    # character offset (already converted from bytes)
       "error_id": "err-typo",
       "title": "Spelling error",
       "description": "Not in the dictionary.",
@@ -184,8 +203,7 @@ def convert_runtime_error_to_checker_format(error: dict[str, Any], text: str) ->
     [form, start, end, error_type, description, suggestions, title]
     
     Args:
-        error: Error dict from divvun-runtime
-        text: The full text being checked (needed for offset conversion)
+        error: Error dict from divvun-runtime (with character offsets)
         
     Returns:
         List in divvun-checker format
@@ -194,16 +212,10 @@ def convert_runtime_error_to_checker_format(error: dict[str, Any], text: str) ->
     error_id = error.get("error_id", "")
     error_type = error_id.replace("err-", "") if error_id.startswith("err-") else error_id
     
-    # Convert byte offsets to character offsets
-    byte_start = error.get("start", 0)
-    byte_end = error.get("end", 0)
-    char_start = byte_offset_to_char_offset(text, byte_start)
-    char_end = byte_offset_to_char_offset(text, byte_end)
-    
     return [
         error.get("form", ""),
-        char_start,
-        char_end,
+        error.get("start", 0),  # Already character offset
+        error.get("end", 0),    # Already character offset
         error_type,
         error.get("description", ""),
         error.get("suggestions", []),
@@ -224,15 +236,14 @@ def convert_runtime_to_checker_format(runtime_response: dict[str, Any]) -> list[
         List of dicts in divvun-checker format, one per line:
         {"text": "line text", "errs": [[form, start, end, type, desc, suggs, title], ...]}
     """
+    # Split by lines and convert byte offsets to character offsets
     line_results = split_runtime_output_by_lines(runtime_response)
-    
-    # Get the full text for offset conversion
-    full_text = runtime_response.get("text", "")
     
     checker_format = []
     for line_result in line_results:
+        # Convert errors (they already have character offsets from split function)
         checker_errors = [
-            convert_runtime_error_to_checker_format(err, full_text)
+            convert_runtime_error_to_checker_format(err)
             for err in line_result["errors"]
         ]
         
