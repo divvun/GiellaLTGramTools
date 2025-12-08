@@ -32,7 +32,7 @@ def check_paragraphs(command: str, paragraphs: list[str]) -> str:
         input="\n".join(paragraphs).encode("utf-8"),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        check=True,
+        check=False,
     )
     
     output = result.stdout.decode("utf-8")

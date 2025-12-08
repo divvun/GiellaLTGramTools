@@ -139,10 +139,13 @@ def build_archive(pipe_spec: str, archive_name: str):
 
 @main.command()
 @click.argument("directory", type=click.Path(exists=True))
-def compare(
-    directory: str
-):
+@click.option(
+    "-V",
+    "--variant",
+    help="Variant/pipeline to use for comparison",
+)
+def compare(directory: str, variant: str = None):
     """Compare grammar checker results in a directory."""
-    engine_comparator(directory)
+    engine_comparator(directory, variant)
 
 

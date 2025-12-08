@@ -22,6 +22,7 @@ class YamlGramChecker(GramChecker):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        # Check if runtime should be used
         self.use_runtime = config.get("use_runtime", False)
         self.checker = self.app()
 
@@ -68,13 +69,24 @@ class YamlGramChecker(GramChecker):
 
         # Check if we should use divvun-runtime
         if self.use_runtime:
-            # Use divvun-runtime with .drb bundle or .ts pipeline
-            if spec_file.suffix not in [".drb", ".ts"]:
-                self.print_error(
-                    f"Error: --use-runtime requires a .drb or .ts file, got {spec_file.suffix}"
-                )
-                raise SystemExit(5)
-            return f"divvun-runtime run -p {spec_file}"
+            # Use divvun-runtime with bundle.drb
+            # Default to ../bundle.drb relative to the spec file location
+            if spec_file:
+                bundle_path = Path(spec_file).parent / "bundle.drb"
+            else:
+                # Fallback if no spec file provided
+                bundle_path = Path("bundle.drb")
+            
+            # Get variant from config
+            variant = self.config.get("variant")
+            
+            # Map smegram-dev variant to sme-gram pipeline
+            if variant == "smegram-dev":
+                return f"divvun-runtime run -p {bundle_path} -P sme-gram"
+            elif variant:
+                return f"divvun-runtime run -p {bundle_path} -P {variant}"
+            else:
+                return f"divvun-runtime run -p {bundle_path}"
         
         # Use divvun-checker (default)
         checker_spec = (
