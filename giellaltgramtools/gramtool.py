@@ -144,8 +144,13 @@ def build_archive(pipe_spec: str, archive_name: str):
     "--variant",
     help="Variant/pipeline to use for comparison",
 )
-def compare(directory: str, variant: str = None):
+@click.option(
+    "--show-known",
+    is_flag=True,
+    help="Show known differences (typo order, parenthesis errors) in output",
+)
+def compare(directory: str, variant: str = None, show_known: bool = False):
     """Compare grammar checker results in a directory."""
-    engine_comparator(directory, variant)
+    engine_comparator(directory, variant, show_known)
 
 
