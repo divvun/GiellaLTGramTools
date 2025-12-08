@@ -1,7 +1,6 @@
 """Compare output of divvun-checker with the output of divvun-runtime"""
 
 import json
-import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -21,17 +20,6 @@ class CheckerResult:
     rep: list[str]
 
     @classmethod
-    def from_dict(cls, data: dict) -> "CheckerResult":
-        """Create CheckerResult from dictionary, ignoring 'msg' field."""
-        return cls(
-            form=data["form"],
-            beg=data["beg"],
-            end=data["end"],
-            err=data["err"],
-            rep=data["rep"],
-        )
-
-    @classmethod
     def from_list(cls, data: list) -> "CheckerResult":
         """Create CheckerResult from list representation."""
         return cls(
@@ -42,52 +30,22 @@ class CheckerResult:
             rep=data[5],
         )
 
-    def to_dict(self) -> dict:
-        """Convert CheckerResult to dictionary for JSON serialization."""
-        return {
-            "form": self.form,
-            "beg": self.beg,
-            "end": self.end,
-            "err": self.err,
-            "rep": self.rep,
-        }
 
-
-def runtime_to_checker_results(json_data: list[dict]) -> list[CheckerResult]:
-    """Convert JSON data to list of CheckerResult objects."""
-    return [CheckerResult.from_dict(item) for item in json_data]
-
-
-def checker_to_checker_results(errs: list[list]) -> list[CheckerResult]:
-    """Convert list of lists to list of CheckerResult objects."""
-    return [CheckerResult.from_list(item) for item in errs]
-
-
-def parse_runtime_output(output: str) -> list[CheckerResult]:
-    """Parse divvun-runtime output, stripping lines until first '[' and converting to CheckerResult objects."""
-    lines = output.splitlines()
-
-    # Find the first line that contains String("...")
-    json_str = None
-    for line in lines:
-        if line.strip().startswith('String("') and line.strip().endswith('")'):
-            # Extract JSON from String("...") format
-            json_str = line.strip()[8:-2]  # Remove 'String("' and '")'
-            break
-
-    if json_str is None:
+def parse_checker_output(output: str) -> list[list[CheckerResult]]:
+    """Parse divvun-checker format output (newline-separated JSON objects)."""
+    lines = output.strip().splitlines()
+    if not lines:
         return []
-
-    try:
-        json_data = json.loads(json_str)
-        return runtime_to_checker_results(json_data)
-    except json.JSONDecodeError:
-        print("Error decoding JSON from divvun-runtime output")
-        print(json_str)
-        return []
+    
+    results = json.loads(f"[{','.join(lines)}]")
+    return [
+        [CheckerResult.from_list(err) for err in result.get("errs", [])]
+        for result in results
+    ]
 
 
 def get_gramcheck_bundles(directory: Path) -> tuple[Path, Path]:
+    """Find .zcheck and .drb files in parent directory."""
     zcheck_files = list(directory.parent.glob("*.zcheck"))
     if not zcheck_files:
         print("Warning: No .zcheck file found in parent directory", file=sys.stderr)
@@ -102,8 +60,9 @@ def get_gramcheck_bundles(directory: Path) -> tuple[Path, Path]:
     return zcheck, drb
 
 
-def get_paragraphs(zcheck: Path, yaml_file: Path) -> list[str]:
-    gramchecker = YamlGramChecker(config={"spec": zcheck, "test_file": None})
+def get_paragraphs(spec_file: Path, yaml_file: Path) -> list[str]:
+    """Extract paragraphs from YAML test file."""
+    gramchecker = YamlGramChecker(config={"spec": spec_file, "test_file": None})
 
     yaml_content = yaml.load(yaml_file.read_text(), Loader=yaml.FullLoader)
     paragraphs: list[str] = sorted(
@@ -117,134 +76,112 @@ def get_paragraphs(zcheck: Path, yaml_file: Path) -> list[str]:
     return paragraphs
 
 
-def get_divvun_runtime_results(
-    drb: Path, paragraphs: list[str]
-) -> list[list[CheckerResult]]:
-    return [
-        parse_runtime_output(
-            subprocess.run(
-                f"divvun-runtime run --path {drb}".split(),
-                input=paragraph.encode("utf-8"),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                check=True,
-            ).stdout.decode("utf-8")
-        )
-        for paragraph in paragraphs
-    ]
+def build_checker_command(zcheck: Path, variant: str = None) -> str:
+    """Build divvun-checker command."""
+    cmd = f"divvun-checker --archive {zcheck}"
+    if variant:
+        cmd += f" --variant {variant}"
+    return cmd
 
 
-def get_divvun_checker_results(
-    zcheck: Path, paragraphs: list[str]
-) -> list[list[CheckerResult]]:
-    divvun_checker_lines = (
-        check_paragraphs_in_parallel(
-            command=f"divvun-checker --archive {zcheck}", paragraphs=paragraphs
-        )
-        .strip()
-        .splitlines()
-    )
-    divvun_checker_results = sorted(
-        json.loads(f"[{','.join(divvun_checker_lines)}]"),
-        key=lambda x: x.get("text", ""),
-    )
-    return [
-        checker_to_checker_results(result.get("errs", []))
-        for result in divvun_checker_results
-    ]
+def build_runtime_command(drb: Path, variant: str = None) -> str:
+    """Build divvun-runtime command."""
+    cmd = f"divvun-runtime run -p {drb}"
+    if variant:
+        # Map variant names if needed (e.g., smegram-dev -> sme-gram)
+        pipeline = "sme-gram" if variant == "smegram-dev" else variant
+        cmd += f" -P {pipeline}"
+    return cmd
 
 
-def is_known_issue(
-    divvun_runtime_error: CheckerResult, divvun_checker_error: CheckerResult
+def compare_results(
+    paragraph: str,
+    checker_errors: list[CheckerResult],
+    runtime_errors: list[CheckerResult],
+    verbose: bool = True
 ) -> bool:
-    if (
-        divvun_runtime_error.err == "typo"
-        and divvun_checker_error.err == "typo"
-        and divvun_runtime_error.rep != divvun_checker_error.rep
-    ):
-        return True
-
-    if (
-        divvun_runtime_error.err != "typo"
-        and divvun_checker_error.err != "typo"
-        and divvun_runtime_error.rep != divvun_checker_error.rep
-    ):
-        return True
-
-    if divvun_runtime_error.err == "typo" and divvun_checker_error.err != "typo":
-        return True
-
-    if divvun_runtime_error.err != "typo" and divvun_checker_error.err == "typo":
-        return True
-
-    return False
-
-
-def make_report(
-    paragraphs: list[str],
-    divvun_checker_results: list[list[CheckerResult]],
-    divvun_runtime_results: list[list[CheckerResult]],
-):
-    for paragraph, divvun_checker_result, divvun_runtime_result in zip(
-        paragraphs, divvun_checker_results, divvun_runtime_results, strict=True
-    ):
-        if len(divvun_checker_result) != len(divvun_runtime_result):
-            print(paragraph)
-            print("Different number of errors found!")
-            print("divvun-checker result:")
-            print(
-                json.dumps(
-                    [asdict(err) for err in divvun_checker_result],
-                    indent=2,
-                    ensure_ascii=False,
-                )
-            )
-            print("divvun-runtime result:")
-            print(
-                json.dumps(
-                    [asdict(err) for err in divvun_runtime_result],
-                    indent=2,
-                    ensure_ascii=False,
-                )
-            )
-            print("----")
-        else:
-            for divvun_runtime_error, divvun_checker_error in zip(
-                divvun_runtime_result,
-                divvun_checker_result,
-                strict=True,
-            ):
-                if (
-                    not is_known_issue(divvun_runtime_error, divvun_checker_error)
-                    and divvun_runtime_error != divvun_checker_error
-                ):
-                    print(f"Mismatch for {paragraph} found!")
-                    print("divvun-checker result:")
-                    print(
-                        json.dumps(
-                            asdict(divvun_checker_error),
-                            indent=2,
-                            ensure_ascii=False,
-                        )
-                    )
-                    print("divvun-runtime result:")
-                    print(
-                        json.dumps(
-                            asdict(divvun_runtime_error),
-                            indent=2,
-                            ensure_ascii=False,
-                        )
-                    )
-                    print("----")
+    """Compare results from checker and runtime. Returns True if they match."""
+    if len(checker_errors) != len(runtime_errors):
+        if verbose:
+            print(f"\nMismatch for: {paragraph}")
+            print(f"Different number of errors: checker={len(checker_errors)}, runtime={len(runtime_errors)}")
+            print("divvun-checker errors:")
+            print(json.dumps([asdict(e) for e in checker_errors], indent=2, ensure_ascii=False))
+            print("divvun-runtime errors:")
+            print(json.dumps([asdict(e) for e in runtime_errors], indent=2, ensure_ascii=False))
+        return False
+    
+    for checker_err, runtime_err in zip(checker_errors, runtime_errors, strict=True):
+        if checker_err != runtime_err:
+            if verbose:
+                print(f"\nMismatch for: {paragraph}")
+                print("divvun-checker error:")
+                print(json.dumps(asdict(checker_err), indent=2, ensure_ascii=False))
+                print("divvun-runtime error:")
+                print(json.dumps(asdict(runtime_err), indent=2, ensure_ascii=False))
+            return False
+    
+    return True
 
 
-def engine_comparator(directory_name: str):
+def engine_comparator(directory_name: str, variant: str = None):
+    """Compare divvun-checker and divvun-runtime outputs for all YAML files in directory.
+    
+    Args:
+        directory_name: Path to directory containing YAML test files
+        variant: Optional variant/pipeline name to use
+    """
     directory = Path(directory_name)
     zcheck, drb = get_gramcheck_bundles(directory)
 
+    checker_cmd = build_checker_command(zcheck, variant)
+    runtime_cmd = build_runtime_command(drb, variant)
+    
+    print(f"Checker command: {checker_cmd}")
+    print(f"Runtime command: {runtime_cmd}")
+    print()
+
+    total_files = 0
+    total_paragraphs = 0
+    total_mismatches = 0
+
     for yaml_file in directory.glob("*.yaml"):
-        print(f"Comparing runtime and checker results for {yaml_file}...")
+        print(f"Processing {yaml_file.name}...")
+        total_files += 1
+        
+        # Get test paragraphs
         paragraphs = get_paragraphs(zcheck, yaml_file)
-        divvun_runtime_results = get_divvun_runtime_results(drb, paragraphs)
-        divvun_checker_results = get_divvun_checker_results(zcheck, paragraphs)
-        make_report(paragraphs, divvun_checker_results, divvun_runtime_results)
+        total_paragraphs += len(paragraphs)
+        
+        # Run both checkers in parallel (both now return same format thanks to runtime_parser)
+        checker_output = check_paragraphs_in_parallel(checker_cmd, paragraphs)
+        runtime_output = check_paragraphs_in_parallel(runtime_cmd, paragraphs)
+        
+        # Parse outputs
+        checker_results = parse_checker_output(checker_output)
+        runtime_results = parse_checker_output(runtime_output)
+        
+        # Compare results
+        file_mismatches = 0
+        for paragraph, checker_errs, runtime_errs in zip(
+            paragraphs, checker_results, runtime_results, strict=True
+        ):
+            if not compare_results(paragraph, checker_errs, runtime_errs):
+                file_mismatches += 1
+                total_mismatches += 1
+        
+        if file_mismatches == 0:
+            print(f"✓ {yaml_file.name}: All {len(paragraphs)} paragraphs match")
+        else:
+            print(f"✗ {yaml_file.name}: {file_mismatches}/{len(paragraphs)} mismatches")
+        print()
+    
+    print("=" * 60)
+    print("Summary:")
+    print(f"  Files processed: {total_files}")
+    print(f"  Total paragraphs: {total_paragraphs}")
+    print(f"  Mismatches: {total_mismatches}")
+    if total_mismatches == 0:
+        print("  ✓ All outputs match!")
+    else:
+        print(f"  ✗ {total_mismatches} mismatches found")
