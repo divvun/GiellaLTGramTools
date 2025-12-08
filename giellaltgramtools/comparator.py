@@ -31,10 +31,7 @@ class CheckerResult:
         )
     
     def __eq__(self, other):
-        """Compare CheckerResults without using the err attribute.
-        
-        The err attribute can differ between divvun-checker and divvun-runtime
-        for the same underlying error, so we ignore it when comparing.
+        """Compare CheckerResults using the lower cased err attributes.
         """
         if not isinstance(other, CheckerResult):
             return NotImplemented
@@ -43,6 +40,7 @@ class CheckerResult:
             self.form == other.form and
             self.beg == other.beg and
             self.end == other.end and
+            self.err.lower() == other.err.lower() and
             self.rep == other.rep
         )
     
