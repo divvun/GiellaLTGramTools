@@ -146,14 +146,33 @@ def split_runtime_output_by_lines(runtime_response: dict[str, Any]) -> list[dict
     return results
 
 
-def convert_runtime_error_to_checker_format(error: dict[str, Any]) -> list[Any]:
+def byte_offset_to_char_offset(text: str, byte_offset: int) -> int:
+    """Convert byte offset to character offset in UTF-8 text.
+    
+    Args:
+        text: The text string
+        byte_offset: Byte offset in UTF-8 encoding
+        
+    Returns:
+        Character offset (position in the string)
+    """
+    # Encode to bytes and take the substring up to byte_offset
+    byte_text = text.encode('utf-8')
+    # Decode the substring to get character count
+    char_text = byte_text[:byte_offset].decode('utf-8', errors='ignore')
+    return len(char_text)
+
+
+def convert_runtime_error_to_checker_format(error: dict[str, Any], text: str) -> list[Any]:
     """Convert a divvun-runtime error object to divvun-checker format.
+    
+    Runtime format uses byte offsets, checker format uses character offsets.
     
     Runtime format:
     {
       "form": "leam",
-      "start": 4,
-      "end": 8,
+      "start": 4,  # byte offset
+      "end": 8,    # byte offset
       "error_id": "err-typo",
       "title": "Spelling error",
       "description": "Not in the dictionary.",
@@ -166,6 +185,7 @@ def convert_runtime_error_to_checker_format(error: dict[str, Any]) -> list[Any]:
     
     Args:
         error: Error dict from divvun-runtime
+        text: The full text being checked (needed for offset conversion)
         
     Returns:
         List in divvun-checker format
@@ -174,10 +194,16 @@ def convert_runtime_error_to_checker_format(error: dict[str, Any]) -> list[Any]:
     error_id = error.get("error_id", "")
     error_type = error_id.replace("err-", "") if error_id.startswith("err-") else error_id
     
+    # Convert byte offsets to character offsets
+    byte_start = error.get("start", 0)
+    byte_end = error.get("end", 0)
+    char_start = byte_offset_to_char_offset(text, byte_start)
+    char_end = byte_offset_to_char_offset(text, byte_end)
+    
     return [
         error.get("form", ""),
-        error.get("start", 0),
-        error.get("end", 0),
+        char_start,
+        char_end,
         error_type,
         error.get("description", ""),
         error.get("suggestions", []),
@@ -200,10 +226,13 @@ def convert_runtime_to_checker_format(runtime_response: dict[str, Any]) -> list[
     """
     line_results = split_runtime_output_by_lines(runtime_response)
     
+    # Get the full text for offset conversion
+    full_text = runtime_response.get("text", "")
+    
     checker_format = []
     for line_result in line_results:
         checker_errors = [
-            convert_runtime_error_to_checker_format(err)
+            convert_runtime_error_to_checker_format(err, full_text)
             for err in line_result["errors"]
         ]
         
