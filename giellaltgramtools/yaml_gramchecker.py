@@ -14,7 +14,6 @@ from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import (
     GramChecker,
     check_paragraphs_in_parallel,
-    check_paragraphs_with_runtime_parallel,
 )
 from giellaltgramtools.testdata import TestData
 
@@ -93,15 +92,11 @@ class YamlGramChecker(GramChecker):
             if text.strip()
         ]
         
-        # Choose checker based on configuration
-        if self.use_runtime:
-            result_str = check_paragraphs_with_runtime_parallel(
-                self.checker, [error_data[0] for error_data in error_datas]
-            )
-        else:
-            result_str = check_paragraphs_in_parallel(
-                self.checker, [error_data[0] for error_data in error_datas]
-            )
+        # Use the same function regardless of checker type
+        # The conversion happens automatically inside check_paragraphs_in_parallel
+        result_str = check_paragraphs_in_parallel(
+            self.checker, [error_data[0] for error_data in error_datas]
+        )
         
         grammar_datas = self.fix_paragraphs(result_str)
 
