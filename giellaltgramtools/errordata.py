@@ -1,5 +1,3 @@
-# -*- coding:utf-8 -*-
-
 # Copyright © 2024 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
@@ -13,5 +11,5 @@ class ErrorData:
     end: int
     error_type: str
     explanation: str
-    suggestions: list[str] = field(default_factory=list)
+    suggestions: list[str] = field(default_factory=lambda: [])
     native_error_type: str | None = None
