@@ -189,10 +189,44 @@ class YamlGramTest(GramTest):
                     )
                 self.config["test_file"].open("w").write(temp_stream.getvalue())
 
+    def move_fails_from_pass(self) -> None:
+        if "PASS" in self.config["test_file"].name and any(self.test_outcomes):
+            failing_tests = [
+                self.config["tests"][index]
+                for (index, test_result) in enumerate(self.test_outcomes)
+                if not test_result
+            ]
+
+            fail_path = Path(str(self.config["test_file"]).replace("PASS", "FAIL"))
+            if not fail_path.exists():
+                fail_data = self.yaml_reader(self.config["test_file"])
+                del fail_data["Tests"]
+                fail_path.write_text(yaml.dump(fail_data) + "\nTests:\n")
+            with fail_path.open("a") as fail_stream:
+                for this_test in failing_tests:
+                    quote_mark = "'" if '"' in this_test else '"'
+                    print(f"  - {quote_mark}{this_test}{quote_mark}", file=fail_stream)
+            with StringIO() as temp_stream:
+                with self.config["test_file"].open("r") as _input:
+                    temp_stream.write(
+                        "".join(
+                            [
+                                line
+                                for line in _input
+                                if not any(
+                                    failing_test in line.strip()
+                                    for failing_test in failing_tests
+                                )
+                            ]
+                        )
+                    )
+                self.config["test_file"].open("w").write(temp_stream.getvalue())
+
     def run(self) -> int:
         failed_or_not = super().run()
 
         if self.config["move_tests"]:
             self.move_passes_from_fail()
+            self.move_fails_from_pass()
 
         return failed_or_not
