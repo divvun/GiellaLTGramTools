@@ -4,6 +4,7 @@ import json
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -20,7 +21,7 @@ class CheckerResult:
     rep: list[str]
 
     @classmethod
-    def from_list(cls, data: list) -> "CheckerResult":
+    def from_list(cls, data: list[Any]) -> "CheckerResult":
         """Create CheckerResult from list representation."""
         return cls(
             form=data[0],
@@ -30,7 +31,7 @@ class CheckerResult:
             rep=data[5],
         )
     
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         """Compare CheckerResults using the lower cased err attributes.
         """
         if not isinstance(other, CheckerResult):
@@ -94,18 +95,18 @@ def get_paragraphs(spec_file: Path, yaml_file: Path) -> list[str]:
     return paragraphs
 
 
-def build_checker_command(zcheck: Path, variant: str = None) -> str:
+def build_checker_command(zcheck: Path, variant: str|None) -> str:
     """Build divvun-checker command."""
     cmd = f"divvun-checker --archive {zcheck}"
-    if variant:
+    if variant is not None:
         cmd += f" --variant {variant}"
     return cmd
 
 
-def build_runtime_command(drb: Path, variant: str = None) -> str:
+def build_runtime_command(drb: Path, variant: str|None) -> str:
     """Build divvun-runtime command."""
     cmd = f"divvun-runtime run -p {drb}"
-    if variant:
+    if variant is not None:
         # Map variant names if needed (e.g., smegram-dev -> sme-gram)
         pipeline = "sme-gram" if variant == "smegram" else variant
         cmd += f" -P {pipeline}"
@@ -278,7 +279,7 @@ def compare_results(
         return True
 
 
-def engine_comparator(directory_name: str, variant: str = None, show_known: bool = False):
+def engine_comparator(directory_name: str, variant: str|None = None, show_known: bool = False):
     """Compare divvun-checker and divvun-runtime outputs for all YAML files in directory.
     
     Args:

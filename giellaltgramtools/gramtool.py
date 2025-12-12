@@ -33,7 +33,7 @@ from giellaltgramtools.yaml_gramtest import YamlGramTest
 @click.group()
 @click.version_option()
 @click.pass_context
-def main(ctx):
+def main(ctx: click.Context):
     """Tool for working with GiellaLT grammars."""
     pass
 
@@ -64,7 +64,14 @@ def main(ctx):
     help="Use divvun-runtime instead of divvun-checker",
 )
 @click.pass_context
-def test(ctx, colour, hide_passes, spec, variant, use_runtime):  # noqa: PLR0913
+def test(  # noqa: PLR0913
+    ctx: click.Context,
+    colour: bool,
+    hide_passes: bool,
+    spec: str,
+    variant: str,
+    use_runtime: bool,
+): 
     """Test the grammars."""
     ctx.ensure_object(dict)
     ctx.obj = {
@@ -92,7 +99,7 @@ def test(ctx, colour, hide_passes, spec, variant, use_runtime):  # noqa: PLR0913
     help="Output style for the results",
 )
 @click.pass_context
-def yaml(ctx, silent, output, yaml_file):
+def yaml(ctx: click.Context, silent: bool, output: str, yaml_file: str):
     """Test a YAML file."""
     ctx.ensure_object(dict)
     ctx.obj["output"] = "silent" if silent else output
@@ -137,6 +144,7 @@ def build_archive(pipe_spec: str, archive_name: str):
     """Build the grammar archive."""
     make_archive(pipe_spec, archive_name)
 
+
 @main.command()
 @click.argument("directory", type=click.Path(exists=True))
 @click.option(
@@ -149,8 +157,6 @@ def build_archive(pipe_spec: str, archive_name: str):
     is_flag=True,
     help="Show known differences (typo order, parenthesis errors) in output",
 )
-def compare(directory: str, variant: str = None, show_known: bool = False):
+def compare(directory: str, variant: str|None = None, show_known: bool = False):
     """Compare grammar checker results in a directory."""
     engine_comparator(directory, variant, show_known)
-
-
