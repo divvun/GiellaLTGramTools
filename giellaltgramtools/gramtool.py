@@ -103,14 +103,25 @@ def test(  # noqa: PLR0913
     is_flag=True,
     help="Move passing tests from FAIL files to PASS files",
 )
+@click.option(
+    "--remove-dupes",
+    is_flag=True,
+    help="Remove duplicate tests from test files",
+)
 @click.pass_context
 def yaml(
-    ctx: click.Context, silent: bool, output: str, move_tests: bool, yaml_file: str
+    ctx: click.Context,
+    silent: bool,
+    output: str,
+    move_tests: bool,
+    remove_dupes: bool,
+    yaml_file: str,
 ):
     """Test a YAML file."""
     ctx.ensure_object(dict)
     ctx.obj["output"] = "silent" if silent else output
     ctx.obj["move_tests"] = move_tests
+    ctx.obj["remove_dupes"] = remove_dupes
     try:
         tester = YamlGramTest(ctx.obj, Path(yaml_file))
         ret = tester.run()

@@ -44,6 +44,7 @@ class YamlGramTest(GramTest):
 
         config["hide_passes"] = args.get("hide_passes", False)
         config["move_tests"] = args.get("move_tests", False)
+        config["remove_dupes"] = args.get("remove_dupes", False)
         config["out"] = output_dict[args.get("output")](args)
         config["test_file"] = filename
 
@@ -87,7 +88,8 @@ class YamlGramTest(GramTest):
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
 
-        self.remove_dupes(config)
+        if args.get("remove_dupes", False):
+            self.remove_dupes(config)
         return config
 
     def _get_duplicate_tests(self, config):
