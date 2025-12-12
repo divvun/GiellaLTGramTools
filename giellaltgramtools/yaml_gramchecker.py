@@ -7,10 +7,13 @@ import sys
 from pathlib import Path
 from typing import Iterator
 
-from corpustools import errormarkup  # type: ignore
-from lxml.etree import Element, _Element
+from corpustools.error_annotated_sentence import (
+    ErrorAnnotatedSentence,
+    parse_markup_to_sentence,
+)
 
 from giellaltgramtools.common import get_pipespecs
+from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.gramchecker import (
     GramChecker,
     check_paragraphs_in_parallel,
@@ -29,16 +32,6 @@ class YamlGramChecker(GramChecker):
     @staticmethod
     def print_error(string):
         print(string, file=sys.stderr)
-
-    def make_error_markup(self, text: str) -> _Element:
-        para: _Element = Element("p")
-        try:
-            para.text = text
-            errormarkup.convert_to_errormarkupxml(para)
-        except TypeError:
-            print(f'Error in {self.config["test_file"]}')
-            print(text, "is not a string")
-        return para
 
     def get_variant(self, spec_file: Path):
         (default_pipe, available_variants) = get_pipespecs(spec_file)
@@ -98,12 +91,27 @@ class YamlGramChecker(GramChecker):
         return f"divvun-checker {checker_spec} {self.get_variant(spec_file)}"
 
     def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
-        error_datas = [
-            self.paragraph_to_testdata(self.make_error_markup(text))
+        error_annotated_sentences: list[ErrorAnnotatedSentence] = [
+            parse_markup_to_sentence(text)
             for text in tests
             if text.strip()
         ]
         
+        error_datas = [
+            (error_annotated_sentence.text, [
+                ErrorData(
+                    error_string=error.form_as_string(),
+                    start=error.start + 1,
+                    end=error.end + 1,
+                    error_type=error.errortype.name.lower(),
+                    explanation=error.errorinfo,
+                    suggestions=error.suggestions,
+                    native_error_type='',
+                )
+                for error in error_annotated_sentence.errors
+            ])
+            for error_annotated_sentence in error_annotated_sentences]
+
         # Use the same function regardless of checker type
         # The conversion happens automatically inside check_paragraphs_in_parallel
         result_str = check_paragraphs_in_parallel(

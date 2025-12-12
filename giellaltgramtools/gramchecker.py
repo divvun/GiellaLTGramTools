@@ -76,7 +76,7 @@ class GramChecker:
 
     def fix_paragraphs(
         self, result_str: str
-    ) -> list[tuple[str, list[list[tuple[str, int, int, str, str, list[str], str]]]]]:
+    ) -> list[tuple[str, list[tuple[str, int, int, str, str, list[str], str]]]]:
         """Fix grammar of a paragraphs.
 
         Args:
