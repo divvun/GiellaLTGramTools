@@ -71,7 +71,7 @@ def test(  # noqa: PLR0913
     spec: str,
     variant: str,
     use_runtime: bool,
-): 
+):
     """Test the grammars."""
     ctx.ensure_object(dict)
     ctx.obj = {
@@ -98,11 +98,19 @@ def test(  # noqa: PLR0913
     type=click.Choice(["normal", "final"]),
     help="Output style for the results",
 )
+@click.option(
+    "--move-tests",
+    is_flag=True,
+    help="Move passing tests from FAIL files to PASS files",
+)
 @click.pass_context
-def yaml(ctx: click.Context, silent: bool, output: str, yaml_file: str):
+def yaml(
+    ctx: click.Context, silent: bool, output: str, move_tests: bool, yaml_file: str
+):
     """Test a YAML file."""
     ctx.ensure_object(dict)
     ctx.obj["output"] = "silent" if silent else output
+    ctx.obj["move_tests"] = move_tests
     try:
         tester = YamlGramTest(ctx.obj, Path(yaml_file))
         ret = tester.run()
@@ -157,6 +165,6 @@ def build_archive(pipe_spec: str, archive_name: str):
     is_flag=True,
     help="Show known differences (typo order, parenthesis errors) in output",
 )
-def compare(directory: str, variant: str|None = None, show_known: bool = False):
+def compare(directory: str, variant: str | None = None, show_known: bool = False):
     """Compare grammar checker results in a directory."""
     engine_comparator(directory, variant, show_known)

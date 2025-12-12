@@ -43,6 +43,7 @@ class YamlGramTest(GramTest):
         config = {}
 
         config["hide_passes"] = args.get("hide_passes", False)
+        config["move_tests"] = args.get("move_tests", False)
         config["out"] = output_dict[args.get("output")](args)
         config["test_file"] = filename
 
@@ -132,8 +133,9 @@ class YamlGramTest(GramTest):
             self._write_deduplicated_file(config, counted_tests)
 
             print(
-                f"ERROR: Removed the following dupes in {config['test_file']}\n"
-                "\n".join("\t" + dupe[0] for dupe in dupes),
+                f"ERROR: Removed the following dupes in {config['test_file']}\n\n".join(
+                    "\t" + dupe[0] for dupe in dupes
+                ),
                 file=sys.stderr,
             )
             sys.exit(99)  # exit code 99 signals hard exit to Make
@@ -188,6 +190,7 @@ class YamlGramTest(GramTest):
     def run(self) -> int:
         failed_or_not = super().run()
 
-        self.move_passes_from_fail()
+        if self.config["move_tests"]:
+            self.move_passes_from_fail()
 
         return failed_or_not
