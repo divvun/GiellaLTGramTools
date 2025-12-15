@@ -53,7 +53,7 @@ def gram_checker():
                 ],
             ],
             [
-                [
+                (
                     "Goaskin viellja",
                     16,
                     31,
@@ -61,7 +61,7 @@ def gram_checker():
                     '"Goaskin viellja" orru leamen goallossátni',
                     ["Goaskinviellja"],
                     "Goallosteapmi",
-                ],
+                ),
                 [
                     '"Goaskin viellja"',
                     15,
@@ -131,7 +131,7 @@ def gram_checker():
                     ["CD"],
                     "Čállinmeattáhus",
                 ],
-                [
+                (
                     "Dálveleaikat",
                     79,
                     91,
@@ -139,7 +139,7 @@ def gram_checker():
                     "Sátni šaddá eará go oaivvilduvvo",
                     ["Dálveleaikkat"],
                     "Čállinmeattáhus dán oktavuođas",
-                ],
+                ),
                 [
                     "“Dálveleaikat“",
                     78,
@@ -173,7 +173,7 @@ def test_fix_hidden_by_aistton_both(gram_checker, errors, wanted_errors):
                 ]
             ],
             [
-                [
+                (
                     "“",
                     7,
                     8,
@@ -181,8 +181,8 @@ def test_fix_hidden_by_aistton_both(gram_checker, errors, wanted_errors):
                     "Boasttuaisttonmearkkat",
                     ["”"],
                     "Aisttonmearkkat",
-                ],
-                [
+                ),
+                (
                     "“",
                     21,
                     22,
@@ -190,7 +190,7 @@ def test_fix_hidden_by_aistton_both(gram_checker, errors, wanted_errors):
                     "Boasttuaisttonmearkkat",
                     ["”"],
                     "Aisttonmearkkat",
-                ],
+                ),
             ],
         )
     ],

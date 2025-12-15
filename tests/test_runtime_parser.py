@@ -42,7 +42,7 @@ def test_parse_runtime_response():
 }\x1b[0m'''
     
     result = parse_runtime_response(output)
-    assert result["text"] == "Mun lea\\nDonn"
+    assert result["text"] == "Mun lea\nDonn"
     assert len(result["errors"]) == 1
     assert result["errors"][0]["form"] == "lea"
 
