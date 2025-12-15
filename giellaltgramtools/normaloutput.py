@@ -98,9 +98,8 @@ class NormalOutput(AllOutput):
             + (
                 (
                     f"{expected_error.error_string}:"
-                    f"({', '.join(expected_error.suggestions)}"
+                    f"({', '.join(expected_error.suggestions)})"
                     f"{explanation}"
-                    ")"
                 )
                 if expected_error.error_string
                 else "No errors expected"
