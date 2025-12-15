@@ -10,7 +10,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Iterable
 
-import yaml
+from yaml import FullLoader, load, parser
 
 from giellaltgramtools.common import COLORS
 from giellaltgramtools.finaloutput import FinalOutput
@@ -54,7 +54,7 @@ class YamlGramTest(GramTest):
 
         try:
             yaml_settings = self.yaml_reader(config["test_file"])
-        except yaml.parser.ParserError as error:
+        except parser.ParserError as error:
             print(
                 f"ERROR: {config['test_file']} is not a valid YAML file",
                 file=sys.stderr,
@@ -145,7 +145,7 @@ class YamlGramTest(GramTest):
     @staticmethod
     def yaml_reader(test_file):
         with test_file.open() as test_file_stream:
-            return yaml.load(test_file_stream, Loader=yaml.FullLoader)
+            return load(test_file_stream, Loader=FullLoader)
 
     def make_test_results(self) -> Iterable[TestData]:
         if not self.config["tests"]:
