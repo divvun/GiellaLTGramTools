@@ -119,7 +119,7 @@ class NormalOutput(AllOutput):
             + "\n"
         )
 
-    def result(self, number, count, test_case):
+    def result(self, number, count):
         passes = sum([count[key] for key in count if key.startswith("t")])
         fails = sum([count[key] for key in count if key.startswith("f")])
         text = colourise(
