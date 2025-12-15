@@ -101,8 +101,8 @@ class YamlGramChecker(GramChecker):
             (error_annotated_sentence.text, [
                 ErrorData(
                     error_string=error.form_as_string(),
-                    start=error.start + 1,
-                    end=error.end + 1,
+                    start=error.start,
+                    end=error.end,
                     error_type=error.errortype.name.lower(),
                     explanation=error.errorinfo,
                     suggestions=error.suggestions,
