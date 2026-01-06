@@ -8,15 +8,17 @@ from pathlib import Path
 from typing import Iterator
 
 from corpustools.error_annotated_sentence import (
-    ErrorAnnotatedSentence,
     parse_markup_to_sentence,
 )
 
 from giellaltgramtools.common import get_pipespecs
-from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.gramchecker import (
     GramChecker,
     check_paragraphs_in_parallel,
+)
+from giellaltgramtools.grammar_error_annotated_sentence import (
+    GrammarErrorAnnotatedSentence,
+    error_annotated_sentence_to_grammar_error_annotated_sentence,
 )
 from giellaltgramtools.testdata import TestData
 
@@ -90,38 +92,36 @@ class YamlGramChecker(GramChecker):
 
         return f"divvun-checker {checker_spec} {self.get_variant(spec_file)}"
 
-    def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
-        error_annotated_sentences: list[ErrorAnnotatedSentence] = [
-            parse_markup_to_sentence(text)
-            for text in tests
-            if text.strip()
-        ]
-        
-        error_datas = [
-            (error_annotated_sentence.text, [
-                ErrorData(
-                    error_string=error.form_as_string(),
-                    start=error.start,
-                    end=error.end,
-                    error_type=error.errortype.name.lower(),
-                    explanation=error.errorinfo,
-                    suggestions=error.suggestions,
-                    native_error_type='',
+    def make_error_datas(self) -> Iterator[GrammarErrorAnnotatedSentence]:
+        """Make GrammarErrorAnnotatedSentence from the test sentences."""
+        for index, text in enumerate(self.config.tests):
+            if text.strip():
+                try:
+                    error_annotated_sentence = parse_markup_to_sentence(iter(text))
+                except ValueError as error:
+                    self.print_error(
+                        f"Error parsing test sentence {index + 1}\n{text} in "
+                        f"{self.config.test_file}:\n{error}"
+                    )
+                    raise SystemExit(4) from error
+                yield error_annotated_sentence_to_grammar_error_annotated_sentence(
+                    error_annotated_sentence
                 )
-                for error in error_annotated_sentence.errors
-            ])
-            for error_annotated_sentence in error_annotated_sentences]
+    def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
+        error_datas: list[GrammarErrorAnnotatedSentence] = list(
+            self.make_error_datas()
+        )
 
         # Use the same function regardless of checker type
         # The conversion happens automatically inside check_paragraphs_in_parallel
         result_str = check_paragraphs_in_parallel(
-            self.checker, [error_data[0] for error_data in error_datas]
+            self.checker, [error_data.sentence for error_data in error_datas]
         )
-        
+
         grammar_datas = self.fix_paragraphs(result_str)
 
         for item in zip(error_datas, grammar_datas, strict=True):
-            test_sentence = item[0][0]
+            test_sentence = item[0].sentence
             gramcheck_sentence = item[1][0]
             if test_sentence != gramcheck_sentence:
                 print(
@@ -135,10 +135,10 @@ class YamlGramChecker(GramChecker):
 
         return (
             self.clean_data(
-                sentence=item[0][0],
-                expected_errors=item[0][1],
+                sentence=item[0].sentence,
+                expected_errors=item[0].errors,
                 gramcheck_errors=item[1][1],
-                filename=self.config["test_file"].name,
+                filename=self.config.test_file.name,
             )
             for item in zip(error_datas, grammar_datas, strict=True)
         )
