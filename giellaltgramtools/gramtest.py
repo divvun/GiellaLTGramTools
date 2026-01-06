@@ -23,7 +23,7 @@ class GramTest:
             for (test_number, test_result) in enumerate(test_results, start=1)
         ]
 
-        self.config.get("out").final_result(self.count)
+        self.config.output.final_result(self.count)
 
     def per_test_report(  # noqa: C901
         self, test_number: int, test_result: TestData, number_of_tests: int
@@ -58,12 +58,12 @@ class GramTest:
         has_fails = any(
             [false_negatives_1, false_negatives_2, false_positives_1, false_positives_2]
         )
-        out = self.config.get("out")
+        out = self.config.output
 
-        if not (self.config.get("hide_passes", False) and not has_fails):
+        if not (self.config.hide_passes and not has_fails):
             out.title(test_number, number_of_tests, test_result.uncorrected)
 
-        if not self.config.get("hide_passes", False):
+        if not self.config.hide_passes:
             for true_positive in true_positives:
                 out.success(
                     test_number,
@@ -142,8 +142,8 @@ class GramTest:
                 test_result.filename,
             )
 
-        if not (self.config.get("hide_passes", False) and not has_fails):
-            out.result(test_number, count, test_result.uncorrected)
+        if not (self.config.hide_passes and not has_fails):
+            out.result(test_number, count)
 
         for key in count:
             self.count[key] += count[key]
@@ -275,7 +275,7 @@ class GramTest:
         return 0 if all(self.test_outcomes) else 1
 
     def __str__(self) -> str:
-        return str(self.config.get("out"))
+        return str(self.config.output)
 
     def make_test_results(self):
         raise NotImplementedError

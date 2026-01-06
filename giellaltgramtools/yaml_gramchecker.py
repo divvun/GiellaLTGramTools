@@ -21,14 +21,15 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
     error_annotated_sentence_to_grammar_error_annotated_sentence,
 )
 from giellaltgramtools.testdata import TestData
+from giellaltgramtools.yaml_config import YamlConfig
 
 
 class YamlGramChecker(GramChecker):
-    def __init__(self, config):
+    def __init__(self, config: YamlConfig):
         super().__init__()
         self.config = config
         # Check if runtime should be used
-        self.use_runtime = config.get("use_runtime", False)
+        self.use_runtime = config.use_runtime
         self.checker = self.app()
 
     @staticmethod
@@ -38,16 +39,16 @@ class YamlGramChecker(GramChecker):
     def get_variant(self, spec_file: Path):
         (default_pipe, available_variants) = get_pipespecs(spec_file)
 
-        if self.config.get("variants") is None:
+        if self.config.variant is None:
             return f"--variant {default_pipe}"
 
-        variants = {
-            variant.replace("-dev", "") if spec_file.suffix == ".zcheck" else variant
-            for variant in self.config.get("variants")
-        }
-        for variant in variants:
-            if variant in available_variants:
-                return f"--variant {variant}"
+        variant = (
+            self.config.variant.replace("-dev", "")
+            if spec_file.suffix == ".zcheck"
+            else self.config.variant
+        )
+        if variant in available_variants:
+            return f"--variant {variant}"
 
         self.print_error(
             "Error in section Variant of the yaml file.\n"
@@ -55,12 +56,12 @@ class YamlGramChecker(GramChecker):
             f"{variant} in {spec_file}"
         )
         available_names = "\n".join(available_variants)
-        self.print_error("Available pipelines are\n" f"{available_names}")
+        self.print_error(f"Available pipelines are\n{available_names}")
 
         raise SystemExit(5)
 
     def app(self):
-        spec_file = self.config.get("spec")
+        spec_file = self.config.spec
 
         # Check if we should use divvun-runtime
         if self.use_runtime:
@@ -71,10 +72,10 @@ class YamlGramChecker(GramChecker):
             else:
                 # Fallback if no spec file provided
                 bundle_path = Path("bundle.drb")
-            
+
             # Get variant from config
-            variant = self.config.get("variant")
-            
+            variant = self.config.variant
+
             # Map smegram-dev variant to sme-gram pipeline
             if variant == "smegram-dev":
                 return f"divvun-runtime run -p {bundle_path} -P sme-gram"
@@ -82,7 +83,7 @@ class YamlGramChecker(GramChecker):
                 return f"divvun-runtime run -p {bundle_path} -P {variant}"
             else:
                 return f"divvun-runtime run -p {bundle_path}"
-        
+
         # Use divvun-checker (default)
         checker_spec = (
             f"--archive {spec_file}"

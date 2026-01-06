@@ -50,7 +50,8 @@ def main(ctx: click.Context):
     "-s",
     "--spec",
     help="""Path to the pipespec.xml spec, .zcheck file, .drb bundle, or .ts pipeline. 
-    Necessary argument for the xml command, useful for the yaml command when doing out of tree builds.""",
+    Necessary argument for the xml command, useful for the yaml command when doing out 
+    of tree builds.""",
     type=click.Path(exists=True),
 )
 @click.option(
@@ -123,7 +124,7 @@ def yaml(
     ctx.obj["move_tests"] = move_tests
     ctx.obj["remove_dupes"] = remove_dupes
     try:
-        tester = YamlGramTest(ctx.obj, Path(yaml_file))
+        tester = YamlGramTest(ctx, Path(yaml_file))
         ret = tester.run()
         sys.stdout.write(str(tester))
         sys.exit(ret)
@@ -133,7 +134,6 @@ def yaml(
         print(f"YAML Scanner Error in {yaml_file}:", file=sys.stderr)
         print(error, file=sys.stderr)
         sys.exit(99)
-
 
 @test.command()
 @click.argument("targets", type=click.Path(exists=True), nargs=-1)
