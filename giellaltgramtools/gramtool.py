@@ -17,12 +17,10 @@
 #   http://giellatekno.uit.no & http://divvun.no
 #
 """GiellaLT tools for grammarchecker needs."""
-
 import sys
 from pathlib import Path
 
 import click
-from yaml.scanner import ScannerError
 
 from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
@@ -110,7 +108,7 @@ def test(  # noqa: PLR0913
     help="Remove duplicate tests from test files",
 )
 @click.pass_context
-def yaml(
+def yaml(  # noqa: PLR0913
     ctx: click.Context,
     silent: bool,
     output: str,
@@ -130,10 +128,7 @@ def yaml(
         sys.exit(ret)
     except KeyboardInterrupt:
         sys.exit(130)
-    except ScannerError as error:
-        print(f"YAML Scanner Error in {yaml_file}:", file=sys.stderr)
-        print(error, file=sys.stderr)
-        sys.exit(99)
+
 
 @test.command()
 @click.argument("targets", type=click.Path(exists=True), nargs=-1)
