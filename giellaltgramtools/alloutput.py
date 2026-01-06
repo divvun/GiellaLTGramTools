@@ -9,9 +9,8 @@ from giellaltgramtools.common import colourise
 
 
 class AllOutput:
-    def __init__(self, args):
+    def __init__(self):
         self._io = StringIO()
-        self.args = args
 
     def __str__(self):
         return self._io.getvalue()
