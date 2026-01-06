@@ -188,7 +188,7 @@ markers = {main = "platform_system == \"Windows\"", dev = "sys_platform == \"win
 
 [[package]]
 name = "corpustools"
-version = "2.3.4"
+version = "2.4.0"
 description = "Manage giellalt corpora"
 optional = false
 python-versions = "^3.10"
@@ -215,7 +215,7 @@ unidecode = "^1.4.0"
 type = "git"
 url = "https://github.com/giellalt/CorpusTools"
 reference = "HEAD"
-resolved_reference = "774624131f6f4e2aed9ab76b01b0469b20db7709"
+resolved_reference = "57ef1aa1f20f592700181532cdfa39eef5ace8a6"
 
 [[package]]
 name = "cssselect"
