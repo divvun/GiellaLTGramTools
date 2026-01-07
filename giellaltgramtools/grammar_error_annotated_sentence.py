@@ -1,8 +1,13 @@
+import json
 from dataclasses import dataclass, field
 
 from corpustools.error_annotated_sentence import ErrorAnnotatedSentence
 
-from giellaltgramtools.errordata import ErrorData, error_markup_to_error_data
+from giellaltgramtools.errordata import (
+    ErrorData,
+    divvun_checker_to_error_data,
+    error_markup_to_error_data,
+)
 
 
 @dataclass
@@ -26,4 +31,17 @@ def error_annotated_sentence_to_grammar_error_annotated_sentence(
 
     return GrammarErrorAnnotatedSentence(
         sentence=error_annotated_sentence.uncorrected_text(), errors=errors
+    )
+
+
+def divvun_checker_output_to_grammar_error_annotated_sentence(
+    divvun_checker_output: str,
+) -> GrammarErrorAnnotatedSentence:
+    divvun_json = json.loads(divvun_checker_output)
+    return GrammarErrorAnnotatedSentence(
+        sentence=divvun_json.get("text"),
+        errors=[
+            divvun_checker_to_error_data(checker_error)
+            for checker_error in divvun_json.get("errs")
+        ],
     )
