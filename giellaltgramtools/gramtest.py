@@ -101,7 +101,6 @@ class GramTest:
             error_type="",
             explanation="",
             suggestions=[],
-            native_error_type="",
         )
         for false_positive_2 in false_positives_2:
             out.failure(
@@ -130,7 +129,6 @@ class GramTest:
             error_type="",
             explanation="",
             suggestions=[],
-            native_error_type="",
         )
         for false_negative_2 in false_negatives_2:
             out.failure(
@@ -183,7 +181,6 @@ class GramTest:
                         error_type="",
                         explanation="",
                         suggestions=[],
-                        native_error_type="",
                     ),
                     ErrorData(
                         error_string="",
@@ -192,7 +189,6 @@ class GramTest:
                         error_type="",
                         explanation="",
                         suggestions=[],
-                        native_error_type="",
                     ),
                 )
             ]

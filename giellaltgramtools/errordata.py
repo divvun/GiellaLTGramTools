@@ -16,7 +16,6 @@ class ErrorData:
     error_type: str
     explanation: str
     suggestions: list[str] = field(default_factory=list)
-    native_error_type: str | None = None
 
 
 def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> ErrorData:
