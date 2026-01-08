@@ -32,3 +32,15 @@ def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> Er
     )
 
     return error_data
+
+def divvun_checker_to_error_data(
+    divvun_checker_error: tuple,
+) -> ErrorData:
+    return ErrorData(
+        error_string=divvun_checker_error[0],
+        start=divvun_checker_error[1],
+        end=divvun_checker_error[2],
+        error_type=divvun_checker_error[3],
+        explanation=divvun_checker_error[4],
+        suggestions=divvun_checker_error[5],
+    )
