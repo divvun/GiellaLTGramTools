@@ -10,8 +10,6 @@ import subprocess
 from functools import partial
 from typing import Iterator
 
-from lxml.etree import _Element  # pyright: ignore[reportPrivateUsage]
-
 from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.runtime_parser import runtime_output_to_checker_json_lines
 from giellaltgramtools.testdata import TestData
@@ -292,75 +290,6 @@ class GramChecker:
                 else:
                     yield d_error
 
-    def get_error_corrections(self, para: _Element) -> str:
-        parts: list[str] = []
-        if para.text is not None:
-            parts.append(para.text)
-        for child in para:
-            if child.tag != "correct":
-                correct = child.find("./correct")
-                if correct is not None:
-                    parts.append(correct.text if correct.text is not None else "")
-                    for grandchild in child:
-                        if grandchild.tag != "correct":
-                            parts.append(self.get_error_corrections(grandchild))
-
-        if not len(para) and para.tail:
-            parts.append(para.tail)
-
-        return "".join(parts)
-
-    @staticmethod
-    def is_non_nested_error(para: _Element) -> bool:
-        """Check if the only children are correct elements."""
-        return all(child.tag == "correct" for child in para)
-
-    def extract_error_info(
-        self, parts: list[str], errors: list[ErrorData | None], para: _Element
-    ) -> ErrorData | None:
-        """Only collect unnested errors."""
-        info = None
-
-        if para.tag.startswith("error"):
-            correct = para.find("./correct")
-            info = ErrorData(
-                error_string=(
-                    self.get_error_corrections(para) if len(para) else (para.text or "")
-                ),
-                start=len("".join(parts)),
-                end=-1,  # Will be set later
-                error_type=para.tag,
-                explanation=(
-                    correct.attrib.get("errorinfo", default="")
-                    if correct is not None
-                    else ""
-                ),
-                suggestions=[
-                    correct.text if correct.text is not None else ""
-                    for correct in para.xpath("./correct")
-                ],
-                native_error_type=para.tag,
-            )
-
-        if para.text:
-            parts.append(para.text)
-
-        for child in para:
-            if child.tag != "correct":
-                if self.is_non_nested_error(child):
-                    errors.append(self.extract_error_info(parts, errors, child))
-                else:
-                    self.extract_error_info(parts, errors, child)
-
-        # Now there is enough information to set the end position
-        if info is not None and para.tag.startswith("error"):
-            info.end = len("".join(parts))
-
-        if para.tail:
-            parts.append(para.tail)
-
-        return info
-
     def _find_duplicate_errors(
         self, errors: list[tuple[str, int, int, str, str, list[str], str]]
     ) -> set[int]:
@@ -405,16 +334,6 @@ class GramChecker:
         self._process_special_errors(d_errors)
         self._remove_duplicate_errors(d_errors)
         return d_errors
-
-    def paragraph_to_testdata(self, para: _Element) -> tuple[str, list[ErrorData]]:
-        """Extract sentence and markup errors."""
-        parts: list[str] = []
-        errors: list[ErrorData | None] = []
-        self.extract_error_info(parts, errors, para)
-
-        sentence = "".join(parts).replace("\n", " ")
-
-        return sentence, [error for error in errors if error is not None]
 
     def remove_foreign(
         self,
