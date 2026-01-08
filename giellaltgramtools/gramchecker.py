@@ -3,14 +3,16 @@
 # Copyright © 2020-2024 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
-
 import json
 import multiprocessing
 import subprocess
 from functools import partial
 from typing import Iterator
 
-from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.errordata import ErrorData, divvun_checker_to_error_data
+from giellaltgramtools.grammar_error_annotated_sentence import (
+    GrammarErrorAnnotatedSentence,
+)
 from giellaltgramtools.runtime_parser import runtime_output_to_checker_json_lines
 from giellaltgramtools.testdata import TestData
 
@@ -32,13 +34,13 @@ def check_paragraphs(command: str, paragraphs: list[str]) -> str:
         stderr=subprocess.PIPE,
         check=False,
     )
-    
+
     output = result.stdout.decode("utf-8")
-    
+
     # If using divvun-runtime, convert output to divvun-checker format
     if "divvun-runtime" in command:
         output = runtime_output_to_checker_json_lines(output)
-    
+
     return output
 
 
@@ -67,279 +69,289 @@ def check_paragraphs_in_parallel(command: str, paragraphs: list[str]) -> str:
     return "".join(strings)
 
 
+def sort_by_range(
+    error: tuple[str, int, int, str, str, list[str], str],
+) -> list[int]:
+    return list(error[1:3])
+
+
+def fix_paragraphs(
+    command: str,
+    result_str: str,
+) -> list[GrammarErrorAnnotatedSentence]:
+    """Fix grammar of a paragraphs.
+
+    Args:
+        result_str: Gramcheck output as a string.
+            Each line is a JSON object containing the grammar checker's
+            result of a single paragraph.
+    Returns:
+        list: List of tuples containing input sentence and error data.
+    """
+    lines = result_str.strip().split("\n")
+    return [
+        GrammarErrorAnnotatedSentence(
+            sentence=gram_error.get("text"),
+            errors=[
+                divvun_checker_to_error_data(fixed_error)
+                for fixed_error in fix_all_errors(command, gram_error.get("errs"))
+            ],
+        )
+        for gram_error in json.loads(f"[{','.join(lines)}]")
+    ]
+
+
+def fix_all_errors(
+    command: str,
+    d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> list[tuple[str, int, int, str, str, list[str], str]]:
+    """Remove errors that cover the same area of the typo and msyn types."""
+    d_errors = list(fix_aistton(d_errors))
+    process_special_errors(command, d_errors)
+    remove_duplicate_errors(d_errors)
+    return d_errors
+
+
+def add_part(
+    command: str,
+    part: str,
+    start: int,
+    end: int,
+    d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> None:
+    res = check_paragraphs(command, [part])
+    res_as_dict = json.loads(res.strip())
+    errors: list[tuple[str, int, int, str, str, list[str], str]] = res_as_dict["errs"]
+    for error in [error for error in errors if error]:
+        candidate: tuple[str, int, int, str, str, list[str], str] = (
+            error[0],
+            start,
+            end,
+            error[3],
+            error[4],
+            error[5],
+            error[6],
+        )
+        if candidate not in d_errors:
+            d_errors.append(candidate)
+
+
+def fix_no_space_before_parent_start(
+    command: str,
+    space_error: tuple[str, int, int, str, str, list[str], str],
+    d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> None:
+    for dupe in [d_error for d_error in d_errors if d_error[1:3] == space_error[1:3]]:
+        d_errors.remove(dupe)
+
+    parenthesis = space_error[0].find("(")
+    d_errors.append(
+        (
+            space_error[0][parenthesis:],
+            space_error[1] + parenthesis,
+            space_error[2],
+            space_error[3],
+            space_error[4],
+            [" ("],
+            space_error[6],
+        )
+    )
+    part1 = space_error[0][:parenthesis]
+    start = space_error[1]
+    end = space_error[1] + len(part1)
+    if part1:
+        add_part(command, part1, start, end, d_errors)
+
+    part2 = space_error[0][parenthesis + 1 :]
+    start = space_error[1] + parenthesis + 1
+    end = space_error[1] + parenthesis + 1 + len(part2)
+    if part2:
+        add_part(command, part2, start, end, d_errors)
+
+    d_errors.sort(key=sort_by_range)
+
+
+def fix_hidden_by_aistton(
+    d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> list[tuple[str, int, int, str, str, list[str], str]]:
+    """Fix errors hidden by aistton-both errors.
+
+    A GramDivvun error of type aistton-both can contain some other error.
+    The other error is reported as having the same range as the aistton-both error.
+
+    This function fixes the range to match the marked up error.
+
+    Args:
+        d_errors (list): List of GramDivvun errors.
+
+    Returns:
+        list: List of GramDivvun errors with the hidden errors revealed.
+    """
+
+    def is_hidden_error(
+        error: tuple[str, int, int, str, str, list[str], str],
+    ) -> bool:
+        return (error[1], error[2]) in aistton_ranges and error[3] not in [
+            "punct-aistton-both",
+            "punct-aistton-left",
+            "punct-aistton-right",
+        ]
+
+    def fix_hidden_error(
+        error: tuple[str, int, int, str, str, list[str], str],
+    ) -> tuple[str, int, int, str, str, list[str], str]:
+        if error[3] == "punct-aistton-left":
+            return (
+                error[0][1:],
+                error[1] + 1,
+                error[2],
+                error[3],
+                error[4],
+                [suggestion[1:] for suggestion in error[5]],
+                error[6],
+            )
+        if error[3] == "punct-aistton-right":
+            return (
+                error[0][:-1],
+                error[1],
+                error[2] - 1,
+                error[3],
+                error[4],
+                [suggestion[:-1] for suggestion in error[5]],
+                error[6],
+            )
+
+        return (
+            error[0][1:-1],
+            error[1] + 1,
+            error[2] - 1,
+            error[3],
+            error[4],
+            [suggestion[1:-1] for suggestion in error[5]],
+            error[6],
+        )
+
+    aistton_ranges = [
+        (error[1], error[2])
+        for error in d_errors
+        if error[3]
+        in ["punct-aistton-both", "punct-aistton-left", "punct-aistton-right"]
+    ]
+    return [
+        fix_hidden_error(error) if is_hidden_error(error) else error
+        for error in d_errors
+    ]
+
+
+def fix_aistton(
+    d_errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> Iterator[tuple[str, int, int, str, str, list[str], str]]:
+    """Rearrange GramDivvun aistton errors to match the Giella markup format.
+
+    GramDivvun marks up errors with wrong quotemarks by including the word next to
+    the quote marks.
+
+    The manual error markup, on the other hand, only marks up the quote marks.
+
+    Args:
+        d_errors (list): List of GramDivvun errors.
+    Returns:
+        list: List of GramDivvun errors with aistton errors fixed.
+    """
+    for d_error in fix_hidden_by_aistton(d_errors):
+        # Skip punct-aistton errors
+        # punct-aistton are emitted together with
+        # punct-aistton-left and punct-aistton-right
+        if d_error[3] != "punct-aistton":
+            if d_error[3] == "punct-aistton-both":
+                yield (
+                    d_error[0][0],
+                    d_error[1],
+                    d_error[1] + 1,
+                    d_error[3],
+                    d_error[4],
+                    ["”"],
+                    d_error[6],
+                )
+                yield (
+                    d_error[0][-1],
+                    d_error[2] - 1,
+                    d_error[2],
+                    d_error[3],
+                    d_error[4],
+                    ["”"],
+                    d_error[6],
+                )
+            elif d_error[3] == "punct-aistton-left":
+                yield (
+                    d_error[0][0],
+                    d_error[1],
+                    d_error[1] + 1,
+                    d_error[3],
+                    d_error[4],
+                    ["”"],
+                    d_error[6],
+                )
+            elif d_error[3] == "punct-aistton-right":
+                yield (
+                    d_error[0][-1],
+                    d_error[2] - 1,
+                    d_error[2],
+                    d_error[3],
+                    d_error[4],
+                    ["”"],
+                    d_error[6],
+                )
+            else:
+                yield d_error
+
+
+def find_duplicate_errors(
+    errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> set[int]:
+    """Find indices of duplicate errors that should be removed."""
+    found_errors: set[str] = set()
+    index_set: set[int] = set()
+
+    for error1 in errors:
+        for error2 in errors:
+            if error1[:3] == error2[:3] and error1 != error2:
+                if str(error1) not in found_errors and str(error2) not in found_errors:
+                    found_errors.add(str(error1))
+                    found_errors.add(str(error2))
+                    index_set.add(errors.index(error1))
+
+    return index_set
+
+
+def remove_duplicate_errors(
+    errors: list[tuple[str, int, int, str, str, list[str], str]],
+) -> None:
+    """Remove duplicate errors from the list."""
+    duplicate_indices = find_duplicate_errors(errors)
+    for pos in sorted(duplicate_indices, reverse=True):
+        del errors[pos]
+
+
+def process_special_errors(
+    command: str, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
+) -> None:
+    """Process special error types that need custom handling."""
+    for d_error in d_errors:
+        if d_error[3] == "no-space-before-parent-start":
+            fix_no_space_before_parent_start(command, d_error, d_errors)
+
+
 class GramChecker:
     def __init__(self, ignore_typos: bool = False):
         self.ignore_typos = ignore_typos
         self.checker = ""
 
-    def fix_paragraphs(
-        self, result_str: str
-    ) -> list[tuple[str, list[tuple[str, int, int, str, str, list[str], str]]]]:
-        """Fix grammar of a paragraphs.
-
-        Args:
-            result_str: Gramcheck output as a string.
-                Each line is a JSON object containing the grammar checker's
-                result of a single paragraph.
-        Returns:
-            list: List of tuples containing input sentence and error data.
-        """
-        lines = result_str.strip().split("\n")
-        return [
-            (gram_error.get("text"), self.fix_all_errors(gram_error.get("errs")))
-            for gram_error in json.loads(f"[{','.join(lines)}]")
-        ]
-
-    @staticmethod
-    def sort_by_range(
-        error: tuple[str, int, int, str, str, list[str], str],
-    ) -> list[int]:
-        return list(error[1:3])
-
-    def add_part(
-        self,
-        part: str,
-        start: int,
-        end: int,
-        d_errors: list[tuple[str, int, int, str, str, list[str], str]],
-    ) -> None:
-        res = check_paragraphs(self.checker, [part])
-        res_as_dict = json.loads(res.strip())
-        errors: list[tuple[str, int, int, str, str, list[str], str]] = res_as_dict[
-            "errs"
-        ]
-        for error in [error for error in errors if error]:
-            candidate: tuple[str, int, int, str, str, list[str], str] = (
-                error[0],
-                start,
-                end,
-                error[3],
-                error[4],
-                error[5],
-                error[6],
-            )
-            if candidate not in d_errors:
-                d_errors.append(candidate)
-
-    def fix_no_space_before_parent_start(
-        self,
-        space_error: tuple[str, int, int, str, str, list[str], str],
-        d_errors: list[tuple[str, int, int, str, str, list[str], str]],
-    ) -> None:
-        for dupe in [
-            d_error for d_error in d_errors if d_error[1:3] == space_error[1:3]
-        ]:
-            d_errors.remove(dupe)
-
-        parenthesis = space_error[0].find("(")
-        d_errors.append(
-            (
-                space_error[0][parenthesis:],
-                space_error[1] + parenthesis,
-                space_error[2],
-                space_error[3],
-                space_error[4],
-                [" ("],
-                space_error[6],
-            )
-        )
-        part1 = space_error[0][:parenthesis]
-        start = space_error[1]
-        end = space_error[1] + len(part1)
-        if part1:
-            self.add_part(part1, start, end, d_errors)
-
-        part2 = space_error[0][parenthesis + 1 :]
-        start = space_error[1] + parenthesis + 1
-        end = space_error[1] + parenthesis + 1 + len(part2)
-        if part2:
-            self.add_part(part2, start, end, d_errors)
-
-        d_errors.sort(key=self.sort_by_range)
-
-    def fix_hidden_by_aistton(
-        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> list[tuple[str, int, int, str, str, list[str], str]]:
-        """Fix errors hidden by aistton-both errors.
-
-        A GramDivvun error of type aistton-both can contain some other error.
-        The other error is reported as having the same range as the aistton-both error.
-
-        This function fixes the range to match the marked up error.
-
-        Args:
-            d_errors (list): List of GramDivvun errors.
-
-        Returns:
-            list: List of GramDivvun errors with the hidden errors revealed.
-        """
-
-        def is_hidden_error(
-            error: tuple[str, int, int, str, str, list[str], str],
-        ) -> bool:
-            return (error[1], error[2]) in aistton_ranges and error[3] not in [
-                "punct-aistton-both",
-                "punct-aistton-left",
-                "punct-aistton-right",
-            ]
-
-        def fix_hidden_error(
-            error: tuple[str, int, int, str, str, list[str], str],
-        ) -> tuple[str, int, int, str, str, list[str], str]:
-            if error[3] == "punct-aistton-left":
-                return (
-                    error[0][1:],
-                    error[1] + 1,
-                    error[2],
-                    error[3],
-                    error[4],
-                    [suggestion[1:] for suggestion in error[5]],
-                    error[6],
-                )
-            if error[3] == "punct-aistton-right":
-                return (
-                    error[0][:-1],
-                    error[1],
-                    error[2] - 1,
-                    error[3],
-                    error[4],
-                    [suggestion[:-1] for suggestion in error[5]],
-                    error[6],
-                )
-
-            return (
-                error[0][1:-1],
-                error[1] + 1,
-                error[2] - 1,
-                error[3],
-                error[4],
-                [suggestion[1:-1] for suggestion in error[5]],
-                error[6],
-            )
-
-        aistton_ranges = [
-            (error[1], error[2])
-            for error in d_errors
-            if error[3]
-            in ["punct-aistton-both", "punct-aistton-left", "punct-aistton-right"]
-        ]
-        return [
-            fix_hidden_error(error) if is_hidden_error(error) else error
-            for error in d_errors
-        ]
-
-    def fix_aistton(
-        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> Iterator[tuple[str, int, int, str, str, list[str], str]]:
-        """Rearrange GramDivvun aistton errors to match the Giella markup format.
-
-        GramDivvun marks up errors with wrong quotemarks by including the word next to
-        the quote marks.
-
-        The manual error markup, on the other hand, only marks up the quote marks.
-
-        Args:
-            d_errors (list): List of GramDivvun errors.
-        Returns:
-            list: List of GramDivvun errors with aistton errors fixed.
-        """
-        for d_error in self.fix_hidden_by_aistton(d_errors):
-            # Skip punct-aistton errors
-            # punct-aistton are emitted together with
-            # punct-aistton-left and punct-aistton-right
-            if d_error[3] != "punct-aistton":
-                if d_error[3] == "punct-aistton-both":
-                    yield (
-                        d_error[0][0],
-                        d_error[1],
-                        d_error[1] + 1,
-                        d_error[3],
-                        d_error[4],
-                        ["”"],
-                        d_error[6],
-                    )
-                    yield (
-                        d_error[0][-1],
-                        d_error[2] - 1,
-                        d_error[2],
-                        d_error[3],
-                        d_error[4],
-                        ["”"],
-                        d_error[6],
-                    )
-                elif d_error[3] == "punct-aistton-left":
-                    yield (
-                        d_error[0][0],
-                        d_error[1],
-                        d_error[1] + 1,
-                        d_error[3],
-                        d_error[4],
-                        ["”"],
-                        d_error[6],
-                    )
-                elif d_error[3] == "punct-aistton-right":
-                    yield (
-                        d_error[0][-1],
-                        d_error[2] - 1,
-                        d_error[2],
-                        d_error[3],
-                        d_error[4],
-                        ["”"],
-                        d_error[6],
-                    )
-                else:
-                    yield d_error
-
-    def _find_duplicate_errors(
-        self, errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> set[int]:
-        """Find indices of duplicate errors that should be removed."""
-        found_errors: set[str] = set()
-        index_set: set[int] = set()
-
-        for error1 in errors:
-            for error2 in errors:
-                if error1[:3] == error2[:3] and error1 != error2:
-                    if (
-                        str(error1) not in found_errors
-                        and str(error2) not in found_errors
-                    ):
-                        found_errors.add(str(error1))
-                        found_errors.add(str(error2))
-                        index_set.add(errors.index(error1))
-
-        return index_set
-
-    def _remove_duplicate_errors(
-        self, errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> None:
-        """Remove duplicate errors from the list."""
-        duplicate_indices = self._find_duplicate_errors(errors)
-        for pos in sorted(duplicate_indices, reverse=True):
-            del errors[pos]
-
-    def _process_special_errors(
-        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> None:
-        """Process special error types that need custom handling."""
-        for d_error in d_errors:
-            if d_error[3] == "no-space-before-parent-start":
-                self.fix_no_space_before_parent_start(d_error, d_errors)
-
-    def fix_all_errors(
-        self, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
-    ) -> list[tuple[str, int, int, str, str, list[str], str]]:
-        """Remove errors that cover the same area of the typo and msyn types."""
-        d_errors = list(self.fix_aistton(d_errors))
-        self._process_special_errors(d_errors)
-        self._remove_duplicate_errors(d_errors)
-        return d_errors
-
     def remove_foreign(
         self,
         marked_errors: list[ErrorData],
-        found_errors: list[tuple[str, int, int, str, str, list[str], str]],
-    ):
+        found_errors: list[ErrorData],
+    ) -> tuple[list[ErrorData], list[ErrorData]]:
         """Remove foreign language error elements."""
         foreign_ranges = [
             (marked_error.start, marked_error.end)
@@ -356,8 +368,8 @@ class GramChecker:
                 found_error
                 for found_error in found_errors
                 if not any(
-                    foreign_range[0] <= found_error[1] < foreign_range[1]
-                    and found_error[2] <= foreign_range[1]
+                    foreign_range[0] <= found_error.start < foreign_range[1]
+                    and found_error.end <= foreign_range[1]
                     for foreign_range in foreign_ranges
                 )
             ],
@@ -366,8 +378,8 @@ class GramChecker:
     def remove_typo(
         self,
         marked_errors: list[ErrorData],
-        found_errors: list[tuple[str, int, int, str, str, list[str], str]],
-    ) -> tuple[list[ErrorData], list[tuple[str, int, int, str, str, list[str], str]]]:
+        found_errors: list[ErrorData],
+    ) -> tuple[list[ErrorData], list[ErrorData]]:
         """Remove foreign language error elements."""
         return (
             [
@@ -375,14 +387,18 @@ class GramChecker:
                 for marked_error in marked_errors
                 if marked_error.error_type != "errorort"
             ],
-            [found_error for found_error in found_errors if found_error[3] != "typo"],
+            [
+                found_error
+                for found_error in found_errors
+                if found_error.error_type != "typo"
+            ],
         )
 
     def clean_data(
         self,
         sentence: str,
         expected_errors: list[ErrorData],
-        gramcheck_errors: list[tuple[str, int, int, str, str, list[str], str]],
+        gramcheck_errors: list[ErrorData],
         filename: str,
     ) -> TestData:
         """Extract data for reporting from a paragraph."""
@@ -397,16 +413,6 @@ class GramChecker:
         return TestData(
             uncorrected=sentence,
             expected_errors=expected_errors,
-            gramcheck_errors=[
-                ErrorData(
-                    error_string=gramcheck_error[0],
-                    start=gramcheck_error[1],
-                    end=gramcheck_error[2],
-                    error_type=gramcheck_error[3],
-                    explanation=gramcheck_error[4],
-                    suggestions=gramcheck_error[5],
-                )
-                for gramcheck_error in gramcheck_errors
-            ],
+            gramcheck_errors=gramcheck_errors,
             filename=filename,
         )

@@ -15,6 +15,7 @@ from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import (
     GramChecker,
     check_paragraphs_in_parallel,
+    fix_paragraphs,
 )
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
@@ -108,6 +109,7 @@ class YamlGramChecker(GramChecker):
                 yield error_annotated_sentence_to_grammar_error_annotated_sentence(
                     error_annotated_sentence
                 )
+
     def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
         error_datas: list[GrammarErrorAnnotatedSentence] = list(
             self.make_error_datas()
@@ -119,11 +121,11 @@ class YamlGramChecker(GramChecker):
             self.checker, [error_data.sentence for error_data in error_datas]
         )
 
-        grammar_datas = self.fix_paragraphs(result_str)
+        grammar_datas = fix_paragraphs(self.checker, result_str)
 
         for item in zip(error_datas, grammar_datas, strict=True):
             test_sentence = item[0].sentence
-            gramcheck_sentence = item[1][0]
+            gramcheck_sentence = item[1].sentence
             if test_sentence != gramcheck_sentence:
                 print(
                     "ERROR: GramDivvun has changed test sentence.\n"
@@ -138,7 +140,7 @@ class YamlGramChecker(GramChecker):
             self.clean_data(
                 sentence=item[0].sentence,
                 expected_errors=item[0].errors,
-                gramcheck_errors=item[1][1],
+                gramcheck_errors=item[1].errors,
                 filename=self.config.test_file.name,
             )
             for item in zip(error_datas, grammar_datas, strict=True)
