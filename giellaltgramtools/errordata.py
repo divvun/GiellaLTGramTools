@@ -34,6 +34,7 @@ def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> Er
 
     return error_data
 
+
 def divvun_checker_to_error_data(
     divvun_checker_error: tuple,
 ) -> ErrorData:
@@ -45,6 +46,7 @@ def divvun_checker_to_error_data(
         explanation=divvun_checker_error[4],
         suggestions=divvun_checker_error[5],
     )
+
 
 def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
     """Split grammar checker punct-aistton-both error into two separate errors.
@@ -61,15 +63,18 @@ def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
         end=aistton_both.start + 1,
         error_type=aistton_both.error_type,
         explanation=aistton_both.explanation,
-        suggestions=[aistton_both.suggestions[0][0]])
+        suggestions=[aistton_both.suggestions[0][0]],
+    )
     yield ErrorData(
         error_string=aistton_both.error_string[-1],
         start=aistton_both.end - 1,
         end=aistton_both.end,
         error_type=aistton_both.error_type,
         explanation=aistton_both.explanation,
-        suggestions=[aistton_both.suggestions[-1][-1]])
-    
+        suggestions=[aistton_both.suggestions[-1][-1]],
+    )
+
+
 def fix_aistton_right(aistton_right: ErrorData) -> ErrorData:
     """Fix grammar checker punct-aistton-right error to match manual error markup.
 
@@ -87,6 +92,7 @@ def fix_aistton_right(aistton_right: ErrorData) -> ErrorData:
         suggestions=[aistton_right.suggestions[0][-1]],
     )
 
+
 def fix_aistton_left(aistton_left: ErrorData) -> ErrorData:
     """Fix grammar checker punct-aistton-left error to match manual error markup.
 
@@ -103,3 +109,14 @@ def fix_aistton_left(aistton_left: ErrorData) -> ErrorData:
         explanation=aistton_left.explanation,
         suggestions=[aistton_left.suggestions[0][0]],
     )
+
+
+def remove_aistton(errors: list[ErrorData]) -> list[ErrorData]:
+    """Remove punct-aistton errors from the list of error data.
+
+    Args:
+        errors (list[ErrorData]): The original list of error data
+    Returns:
+        List of ErrorData with punct-aistton errors removed.
+    """
+    return [error for error in errors if not error.error_type == "punct-aistton"]

@@ -3,6 +3,7 @@ from giellaltgramtools.errordata import (
     fix_aistton_both,
     fix_aistton_left,
     fix_aistton_right,
+    remove_aistton,
 )
 
 
@@ -39,6 +40,7 @@ def test_fix_aistton_both():
 
     assert fixed_errors == expected_fixed_errors
 
+
 def test_fix_aistton_right():
     input_error = ErrorData(
         error_string='sávzzat"',
@@ -49,22 +51,23 @@ def test_fix_aistton_right():
         suggestions=["sávzzat”"],
     )
 
-    expected_fixed_error  = ErrorData(
-            error_string='"',
-            start=13,
-            end=14,
-            error_type="punct-aistton-right",
-            explanation="Leat boasttuaisttonmearkkat.",
-            suggestions=["”"],
-        )
+    expected_fixed_error = ErrorData(
+        error_string='"',
+        start=13,
+        end=14,
+        error_type="punct-aistton-right",
+        explanation="Leat boasttuaisttonmearkkat.",
+        suggestions=["”"],
+    )
 
     fixed_error = fix_aistton_right(input_error)
 
     assert fixed_error == expected_fixed_error
 
+
 def test_fix_aistton_left():
     input_error = ErrorData(
-        error_string='«sávzzat',
+        error_string="«sávzzat",
         start=0,
         end=8,
         error_type="punct-aistton-left",
@@ -72,15 +75,50 @@ def test_fix_aistton_left():
         suggestions=["“sávzzat"],
     )
 
-    expected_fixed_error  = ErrorData(
-            error_string="«",
-            start=0,
-            end=1,
-            error_type="punct-aistton-left",
-            explanation="Leat boasttuaisttonmearkkat.",
-            suggestions=["“"],
-        )
+    expected_fixed_error = ErrorData(
+        error_string="«",
+        start=0,
+        end=1,
+        error_type="punct-aistton-left",
+        explanation="Leat boasttuaisttonmearkkat.",
+        suggestions=["“"],
+    )
 
     fixed_error = fix_aistton_left(input_error)
 
     assert fixed_error == expected_fixed_error
+
+
+def test_remove_aistton():
+    input_errors = [
+        ErrorData(
+            'sávzzat"',
+            6,
+            14,
+            "punct-aistton",
+            "Leat boasttuaisttonmearkkat.",
+            ["sávzzatsávzzat”"],
+        ),
+        ErrorData(
+            'sávzzat"',
+            6,
+            14,
+            "punct-aistton-right",
+            "Leat boasttuaisttonmearkkat.",
+            ["sávzzatsávzzat”"],
+        ),
+    ]
+    excepted_errors = [
+        ErrorData(
+            'sávzzat"',
+            6,
+            14,
+            "punct-aistton-right",
+            "Leat boasttuaisttonmearkkat.",
+            ["sávzzatsávzzat”"],
+        ),
+    ]
+
+    fixed_errors = remove_aistton(input_errors)
+
+    assert fixed_errors == excepted_errors
