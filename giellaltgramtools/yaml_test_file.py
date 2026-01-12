@@ -19,7 +19,7 @@ def load_yaml_file(yaml_test_file: Path) -> YamlTestFile:
         yaml_content = load(yaml_test_file.read_text(), Loader=FullLoader)
     except (ScannerError, ParserError) as error:
         print(
-            f"ERROR: Could not parse YAML file {yaml_test_file}:\n{error}",
+            f"ERROR: yaml syntax error in {yaml_test_file}:\n{error}",
             file=sys.stderr,
         )
         sys.exit(99)
