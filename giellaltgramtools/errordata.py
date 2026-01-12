@@ -20,6 +20,14 @@ class ErrorData:
 
 
 def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> ErrorData:
+    """Convert an ErrorMarkup to ErrorData.
+
+    Args:
+        error_markup (ErrorMarkup): The ErrorMarkup to convert.
+        offset (int): Offset to add to start and end positions.
+    Returns:
+        ErrorData: The converted ErrorData object.
+    """
     error_string = error_markup.uncorrected_text()
     error_data = ErrorData(
         error_string=error_string,
@@ -38,6 +46,12 @@ def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> Er
 def divvun_checker_to_error_data(
     divvun_checker_error: tuple,
 ) -> ErrorData:
+    """Convert a divvun-checker error tuple to ErrorData.
+    Args:
+        divvun_checker_error (tuple): A tuple representing a divvun-checker
+    Returns:
+        ErrorData: The converted ErrorData object.
+    """
     return ErrorData(
         error_string=divvun_checker_error[0],
         start=divvun_checker_error[1],
