@@ -60,4 +60,23 @@ def divvun_checker_to_error_data(
         suggestions=divvun_checker_error[5],
     )
 
+def is_markup_equal_to_grammar_error(
+    error_markup: ErrorData,
+    grammar_error: ErrorData,
+) -> bool:
+    """Check if an ErrorMarkup is equal to a GrammarError (ErrorData).
 
+    Args:
+        error_markup (ErrorMarkup): The ErrorMarkup to compare.
+        grammar_error (ErrorData): The GrammarError (ErrorData) to compare.
+        offset (int): Offset to add to start and end positions.
+    Returns:
+        bool: True if equal, False otherwise.
+    """
+    
+    return (
+        error_markup.error_string == grammar_error.error_string
+        and error_markup.start == grammar_error.start
+        and error_markup.end == grammar_error.end
+        and any(markup_suggestion in grammar_error.suggestions for markup_suggestion in error_markup.suggestions)
+    )
