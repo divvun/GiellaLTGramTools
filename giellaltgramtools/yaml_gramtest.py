@@ -74,7 +74,7 @@ class YamlGramTest(GramTest):
             else ctx.obj["variant"],
             tests=yaml_content.tests,
             test_file=filename,
-            use_runtime=ctx.obj.get("use_runtime", False    )
+            use_runtime=ctx.obj.get("use_runtime", False),
         )
 
         return yaml_config
