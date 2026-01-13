@@ -23,7 +23,7 @@ class DivvunRuntimeError:
     end: int
     error_id: str
     description: str
-    suggestions: tuple[str]
+    suggestions: tuple[str, ...]
 
 
 @dataclass
