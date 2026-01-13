@@ -49,7 +49,7 @@ def divvun_checker_output_to_grammar_error_annotated_sentence(
             )),
     )
 
-def fix_paragraphs(
+def divvun_checker_to_grammar_error_annotated_sentences(
     result_str: str,
 ) -> list[GrammarErrorAnnotatedSentence]:
     """Convert divvun-checker output to a list of GrammarErrorAnnotatedSentence.

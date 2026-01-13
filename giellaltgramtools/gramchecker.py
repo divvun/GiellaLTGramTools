@@ -11,7 +11,10 @@ from typing import Iterator
 from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
-    fix_paragraphs,
+    divvun_checker_to_grammar_error_annotated_sentences,
+)
+from giellaltgramtools.runtime_parser import (
+    runtime_to_grammar_error_annotated_sentences,
 )
 from giellaltgramtools.testdata import TestData
 
@@ -36,13 +39,13 @@ def check_paragraphs(
         check=False,
     )
 
-    output = fix_paragraphs(result.stdout.decode("utf-8"))
-
+    output = result.stdout.decode("utf-8")
     # If using divvun-runtime, convert output to divvun-checker format
-    # if "divvun-runtime" in command:
-    #     output = runtime_output_to_checker_json_lines(output)
-
-    return output
+    return (
+        runtime_to_grammar_error_annotated_sentences(output)
+        if "divvun-runtime" in command
+        else divvun_checker_to_grammar_error_annotated_sentences(output)
+    )
 
 
 def chunks(lst: list[str], n: int) -> Iterator[list[str]]:

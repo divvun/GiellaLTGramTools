@@ -2,6 +2,8 @@
 
 """Tests for runtime_parser module."""
 
+import json
+
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
 )
@@ -13,7 +15,7 @@ from giellaltgramtools.runtime_parser import (
     find_json_end,
     parse_runtime_response,
     runtime_to_char_offsets,
-    split_json_by_sentences,
+    runtime_to_grammar_error_annotated_sentences,
     strip_ansi_codes,
 )
 
@@ -237,22 +239,23 @@ def test_errordata_from_runtime_adjusted_positions():
 
 def test_split_json_by_sentences_single():
     """Test splitting single sentence."""
-    runtime = DivvunRuntime(
-        text="Mun lean.",
-        errors=[
-            DivvunRuntimeError(
-                form="lean",
-                start=4,
-                end=8,
-                error_id="typo",
-                description="Typo",
-                suggestions=("lean",),
-            )
+    runtime_dict = {
+        "text": "Mun lean.",
+        "errors": [
+            {
+                "form": "lean",
+                "start": 4,
+                "end": 8,
+                "error_id": "typo",
+                "description": "Typo",
+                "suggestions": ["lean"],
+            }
         ],
-        encoding="utf-8",
-    )
+        "encoding": "utf-8",
+    }
+    json_output = json.dumps(runtime_dict)
 
-    result = split_json_by_sentences(runtime)
+    result = runtime_to_grammar_error_annotated_sentences(json_output)
 
     assert len(result) == 1
     assert isinstance(result[0], GrammarErrorAnnotatedSentence)
@@ -262,30 +265,31 @@ def test_split_json_by_sentences_single():
 
 def test_split_json_by_sentences_multiple():
     """Test splitting multiple sentences."""
-    runtime = DivvunRuntime(
-        text="Mun lean.\nDonn",
-        errors=[
-            DivvunRuntimeError(
-                form="lean",
-                start=4,
-                end=8,
-                error_id="typo",
-                description="Typo",
-                suggestions=("lean",),
-            ),
-            DivvunRuntimeError(
-                form="Donn",
-                start=10,
-                end=14,
-                error_id="typo",
-                description="Typo",
-                suggestions=("Don",),
-            ),
+    runtime_dict = {
+        "text": "Mun lean.\nDonn",
+        "errors": [
+            {
+                "form": "lean",
+                "start": 4,
+                "end": 8,
+                "error_id": "typo",
+                "description": "Typo",
+                "suggestions": ["lean"],
+            },
+            {
+                "form": "Donn",
+                "start": 10,
+                "end": 14,
+                "error_id": "typo",
+                "description": "Typo",
+                "suggestions": ["Don"],
+            },
         ],
-        encoding="utf-8",
-    )
+        "encoding": "utf-8",
+    }
+    json_output = json.dumps(runtime_dict)
 
-    result = split_json_by_sentences(runtime)
+    result = runtime_to_grammar_error_annotated_sentences(json_output)
 
     assert len(result) == 2
     assert result[0].sentence == "Mun lean."
@@ -301,13 +305,14 @@ def test_split_json_by_sentences_multiple():
 
 def test_split_json_by_sentences_no_errors():
     """Test splitting sentences with no errors."""
-    runtime = DivvunRuntime(
-        text="Correct sentence.\nAnother one.",
-        errors=[],
-        encoding="utf-8",
-    )
+    runtime_dict = {
+        "text": "Correct sentence.\nAnother one.",
+        "errors": [],
+        "encoding": "utf-8",
+    }
+    json_output = json.dumps(runtime_dict)
 
-    result = split_json_by_sentences(runtime)
+    result = runtime_to_grammar_error_annotated_sentences(json_output)
 
     assert len(result) == 2
     assert result[0].sentence == "Correct sentence."

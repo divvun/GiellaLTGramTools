@@ -106,20 +106,20 @@ def parse_runtime_response(output: str) -> DivvunRuntime:
         return DivvunRuntime(text="", errors=[], encoding="utf-8")
 
     data = json.loads(clean_output[json_start:json_end])
-    
+
     return DivvunRuntime(
         text=data.get("text", ""),
         errors=[
-        DivvunRuntimeError(
-            form=error["form"],
-            start=error["start"],
-            end=error["end"],
-            error_id=error["error_id"],
-            description=error["description"],
-            suggestions=tuple(error.get("suggestions", [])),
-        )
-        for error in data.get("errors", [])
-    ],
+            DivvunRuntimeError(
+                form=error["form"],
+                start=error["start"],
+                end=error["end"],
+                error_id=error["error_id"],
+                description=error["description"],
+                suggestions=tuple(error.get("suggestions", [])),
+            )
+            for error in data.get("errors", [])
+        ],
         encoding=data.get("encoding", "utf-8"),
     )
 
@@ -169,8 +169,8 @@ def errordata_from_runtime(
     ]
 
 
-def split_json_by_sentences(
-    orig_divvun_runtime: DivvunRuntime,
+def runtime_to_grammar_error_annotated_sentences(
+    orig_divvun_runtime: str,
 ) -> list[GrammarErrorAnnotatedSentence]:
     """Split a DivvunRuntime string with multiple sentences into separate objects.
 
@@ -180,8 +180,9 @@ def split_json_by_sentences(
     Returns:
         List of GrammarErrorAnnotatedSentence, one per sentence.
     """
-    text = orig_divvun_runtime.text
-    errors = orig_divvun_runtime.errors
+    runtime = runtime_to_char_offsets(parse_runtime_response(orig_divvun_runtime))
+    text = runtime.text
+    errors = runtime.errors
 
     # Split text by newlines (sentences)
     sentences = text.split("\n")
