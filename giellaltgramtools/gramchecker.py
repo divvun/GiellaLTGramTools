@@ -107,7 +107,6 @@ def fix_all_errors(
 ) -> list[tuple[str, int, int, str, str, list[str], str]]:
     """Remove errors that cover the same area of the typo and msyn types."""
     d_errors = list(fix_aistton(d_errors))
-    process_special_errors(command, d_errors)
     remove_duplicate_errors(d_errors)
     return d_errors
 
@@ -134,41 +133,6 @@ def add_part(
         )
         if candidate not in d_errors:
             d_errors.append(candidate)
-
-
-def fix_no_space_before_parent_start(
-    command: str,
-    space_error: tuple[str, int, int, str, str, list[str], str],
-    d_errors: list[tuple[str, int, int, str, str, list[str], str]],
-) -> None:
-    for dupe in [d_error for d_error in d_errors if d_error[1:3] == space_error[1:3]]:
-        d_errors.remove(dupe)
-
-    parenthesis = space_error[0].find("(")
-    d_errors.append(
-        (
-            space_error[0][parenthesis:],
-            space_error[1] + parenthesis,
-            space_error[2],
-            space_error[3],
-            space_error[4],
-            [" ("],
-            space_error[6],
-        )
-    )
-    part1 = space_error[0][:parenthesis]
-    start = space_error[1]
-    end = space_error[1] + len(part1)
-    if part1:
-        add_part(command, part1, start, end, d_errors)
-
-    part2 = space_error[0][parenthesis + 1 :]
-    start = space_error[1] + parenthesis + 1
-    end = space_error[1] + parenthesis + 1 + len(part2)
-    if part2:
-        add_part(command, part2, start, end, d_errors)
-
-    d_errors.sort(key=sort_by_range)
 
 
 def fix_hidden_by_aistton(
@@ -331,15 +295,6 @@ def remove_duplicate_errors(
     duplicate_indices = find_duplicate_errors(errors)
     for pos in sorted(duplicate_indices, reverse=True):
         del errors[pos]
-
-
-def process_special_errors(
-    command: str, d_errors: list[tuple[str, int, int, str, str, list[str], str]]
-) -> None:
-    """Process special error types that need custom handling."""
-    for d_error in d_errors:
-        if d_error[3] == "no-space-before-parent-start":
-            fix_no_space_before_parent_start(command, d_error, d_errors)
 
 
 class GramChecker:
