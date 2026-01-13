@@ -20,7 +20,7 @@ from giellaltgramtools.errordata import ErrorData, error_markup_to_error_data
                 errortype=ErrorType.ERRORLANG,
                 correction=CorrectionSegment(
                     error_info="kal,bio",
-                    suggestions=[""],
+                    suggestions=[("")],
                 ),
             ),
             0,
@@ -30,7 +30,7 @@ from giellaltgramtools.errordata import ErrorData, error_markup_to_error_data
                 end=18,
                 error_type="errorlang",
                 explanation="kal,bio",
-                suggestions=[""],
+                suggestions=("",),
             ),
         ),
         (
@@ -50,7 +50,7 @@ from giellaltgramtools.errordata import ErrorData, error_markup_to_error_data
                 end=7,
                 error_type="error",
                 explanation="",
-                suggestions=["Ij"],
+                suggestions=("Ij",),
             ),
         ),
         (
@@ -85,7 +85,7 @@ from giellaltgramtools.errordata import ErrorData, error_markup_to_error_data
                 end=9,
                 error_type="errorformat",
                 explanation="notspace",
-                suggestions=["A B C"],
+                suggestions=("A B C",),
             ),
         ),
     ],

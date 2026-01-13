@@ -19,7 +19,7 @@ def test_fix_aistton_both():
         end=52,
         error_type="punct-aistton-both",
         explanation="Leat boasttuaisttonmearkkat.",
-        suggestions=["”Skábmačuovggas”Skábmačuovggas”"],
+        suggestions=("”Skábmačuovggas”Skábmačuovggas”",),
     )
 
     expected_fixed_errors = [
@@ -29,7 +29,7 @@ def test_fix_aistton_both():
             end=37,
             error_type="punct-aistton-both",
             explanation="Leat boasttuaisttonmearkkat.",
-            suggestions=["”"],
+            suggestions=("”",),
         ),
         ErrorData(
             error_string="»",
@@ -37,7 +37,7 @@ def test_fix_aistton_both():
             end=52,
             error_type="punct-aistton-both",
             explanation="Leat boasttuaisttonmearkkat.",
-            suggestions=["”"],
+            suggestions=("”",),
         ),
     ]
 
@@ -53,7 +53,7 @@ def test_fix_aistton_right():
         end=14,
         error_type="punct-aistton-right",
         explanation="Leat boasttuaisttonmearkkat.",
-        suggestions=["sávzzat”"],
+        suggestions=("sávzzat”",),
     )
 
     expected_fixed_error = ErrorData(
@@ -62,7 +62,7 @@ def test_fix_aistton_right():
         end=14,
         error_type="punct-aistton-right",
         explanation="Leat boasttuaisttonmearkkat.",
-        suggestions=["”"],
+        suggestions=("”",),
     )
 
     fixed_error = fix_aistton_right(input_error)
@@ -77,7 +77,7 @@ def test_fix_aistton_left():
         end=8,
         error_type="punct-aistton-left",
         explanation="Leat boasttuaisttonmearkkat.",
-        suggestions=["“sávzzat"],
+        suggestions=("“sávzzat",),
     )
 
     expected_fixed_error = ErrorData(
@@ -86,7 +86,7 @@ def test_fix_aistton_left():
         end=1,
         error_type="punct-aistton-left",
         explanation="Leat boasttuaisttonmearkkat.",
-        suggestions=["“"],
+        suggestions=("“",),
     )
 
     fixed_error = fix_aistton_left(input_error)
@@ -102,7 +102,7 @@ def test_remove_aistton():
             14,
             "punct-aistton",
             "Leat boasttuaisttonmearkkat.",
-            ["sávzzatsávzzat”"],
+            ("sávzzat”",),
         ),
         ErrorData(
             'sávzzat"',
@@ -110,7 +110,7 @@ def test_remove_aistton():
             14,
             "punct-aistton-right",
             "Leat boasttuaisttonmearkkat.",
-            ["sávzzatsávzzat”"],
+            ("sávzzat”",),
         ),
     ]
     excepted_errors = [
@@ -120,7 +120,7 @@ def test_remove_aistton():
             14,
             "punct-aistton-right",
             "Leat boasttuaisttonmearkkat.",
-            ["sávzzatsávzzat”"],
+            ("sávzzat”",),
         ),
     ]
 
@@ -139,7 +139,7 @@ def test_remove_aistton():
                     32,
                     "msyn-compound",
                     '"Goaskin viellja" orru leamen goallossátni',
-                    ['"Goaskinviellja"'],
+                    ('"Goaskinviellja"',),
                 ),
                 ErrorData(
                     '"Goaskin viellja"',
@@ -147,7 +147,7 @@ def test_remove_aistton():
                     32,
                     "punct-aistton-both",
                     "Boasttuaisttonmearkkat",
-                    ["”Goaskin viellja”"],
+                    ("”Goaskin viellja”",),
                 ),
             ],
             [
@@ -157,7 +157,7 @@ def test_remove_aistton():
                     31,
                     "msyn-compound",
                     '"Goaskin viellja" orru leamen goallossátni',
-                    ["Goaskinviellja"],
+                    ("Goaskinviellja",),
                 ),
                 ErrorData(
                     '"Goaskin viellja"',
@@ -165,7 +165,7 @@ def test_remove_aistton():
                     32,
                     "punct-aistton-both",
                     "Boasttuaisttonmearkkat",
-                    ["”Goaskin viellja”"],
+                    ("”Goaskin viellja”",),
                 ),
             ],
         ),
@@ -177,7 +177,7 @@ def test_remove_aistton():
                     45,
                     "msyn-compound",
                     '"dálve olympiijagilvvuid" orru leamen goallossátni',
-                    ["dálveolympiijagilvvuid"],
+                    ("dálveolympiijagilvvuid",),
                 ),
                 ErrorData(
                     "CDa",
@@ -185,7 +185,7 @@ def test_remove_aistton():
                     56,
                     "typo",
                     "Ii leat sátnelisttus",
-                    ["CD"],
+                    ("CD",),
                 ),
                 ErrorData(      
                     "“Dálveleaikat“",
@@ -193,7 +193,7 @@ def test_remove_aistton():
                     92,
                     "real-PlNomPxSg2-PlNom",
                     "Sátni šaddá eará go oaivvilduvvo",
-                    ["“Dálveleaikkat“"],
+                    ("“Dálveleaikkat“",),
                 ),
                 ErrorData(
                     "“Dálveleaikat“",
@@ -201,7 +201,7 @@ def test_remove_aistton():
                     92,
                     "punct-aistton-both",
                     "Boasttuaisttonmearkkat",
-                    ["”Dálveleaikat”"],
+                    ("”Dálveleaikat”",),
                 ),
             ],
             [
@@ -211,7 +211,7 @@ def test_remove_aistton():
                     45,
                     "msyn-compound",
                     '"dálve olympiijagilvvuid" orru leamen goallossátni',
-                    ["dálveolympiijagilvvuid"],
+                    ("dálveolympiijagilvvuid",),
                 ),
                 ErrorData(
                     "CDa",
@@ -219,7 +219,7 @@ def test_remove_aistton():
                     56,
                     "typo",
                     "Ii leat sátnelisttus",
-                    ["CD"],
+                    ("CD",),
                 ),
                 ErrorData(
                     "Dálveleaikat",
@@ -227,7 +227,7 @@ def test_remove_aistton():
                     91,
                     "real-PlNomPxSg2-PlNom",
                     "Sátni šaddá eará go oaivvilduvvo",
-                    ["Dálveleaikkat"],
+                    ("Dálveleaikkat",),
                 ),
                 ErrorData(  
                     "“Dálveleaikat“",
@@ -235,7 +235,7 @@ def test_remove_aistton():
                     92,
                     "punct-aistton-both",
                     "Boasttuaisttonmearkkat",
-                    ["”Dálveleaikat”"],
+                    ("”Dálveleaikat”",),
                 ),
             ],
         ),

@@ -51,7 +51,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=18,
                         error_type="errorlang",
                         explanation="kal,bio",
-                        suggestions=[""],
+                        suggestions=("",),
                     )
                 ],
             ),
@@ -94,7 +94,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=4,
                         error_type="errorortreal",
                         explanation="",
-                        suggestions=["c1"],
+                        suggestions=("c1",),
                     ),
                     ErrorData(
                         error_string="e2",
@@ -102,7 +102,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=9,
                         error_type="errorort",
                         explanation="",
-                        suggestions=["c2"],
+                        suggestions=("c2",),
                     ),
                 ],
             ),
@@ -200,7 +200,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=20,
                         error_type="errorort",
                         explanation="verb,a",
-                        suggestions=["dahkaluddame"],
+                        suggestions=("dahkaluddame",),
                     ),
                     ErrorData(
                         error_string="máhkaš",
@@ -208,7 +208,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=36,
                         error_type="errorortreal",
                         explanation="adv,á",
-                        suggestions=["mahkáš"],
+                        suggestions=("mahkáš",),
                     ),
                     ErrorData(
                         error_string="makkarge",
@@ -216,7 +216,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=53,
                         error_type="errorort",
                         explanation="adv,á",
-                        suggestions=["makkárge"],
+                        suggestions=("makkárge",),
                     ),
                     ErrorData(
                         error_string="makkar soga",
@@ -224,7 +224,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=111,
                         error_type="errorlex",
                         explanation="",
-                        suggestions=["man soga"],
+                        suggestions=("man soga",),
                     ),
                     ErrorData(
                         error_string="ovddasttit",
@@ -232,7 +232,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         end=126,
                         error_type="errorort",
                         explanation="verb,conc",
-                        suggestions=["ovddastit"],
+                        suggestions=("ovddastit",),
                     ),
                 ],
             ),

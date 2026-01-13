@@ -18,7 +18,7 @@ def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
         end=aistton_both.start + 1,
         error_type=aistton_both.error_type,
         explanation=aistton_both.explanation,
-        suggestions=[aistton_both.suggestions[0][0]],
+        suggestions=(aistton_both.suggestions[0][0],),
     )
     yield ErrorData(
         error_string=aistton_both.error_string[-1],
@@ -26,7 +26,7 @@ def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
         end=aistton_both.end,
         error_type=aistton_both.error_type,
         explanation=aistton_both.explanation,
-        suggestions=[aistton_both.suggestions[-1][-1]],
+        suggestions=(aistton_both.suggestions[-1][-1],),
     )
 
 
@@ -44,7 +44,7 @@ def fix_aistton_right(aistton_right: ErrorData) -> ErrorData:
         end=aistton_right.end,
         error_type=aistton_right.error_type,
         explanation=aistton_right.explanation,
-        suggestions=[aistton_right.suggestions[0][-1]],
+        suggestions=(aistton_right.suggestions[0][-1],),
     )
 
 
@@ -62,7 +62,7 @@ def fix_aistton_left(aistton_left: ErrorData) -> ErrorData:
         end=aistton_left.start + 1,
         error_type=aistton_left.error_type,
         explanation=aistton_left.explanation,
-        suggestions=[aistton_left.suggestions[0][0]],
+        suggestions=(aistton_left.suggestions[0][0],),
     )
 
 
@@ -77,6 +77,8 @@ def remove_aistton(errors: list[ErrorData]) -> list[ErrorData]:
         List of ErrorData with punct-aistton errors removed.
     """
     return [error for error in errors if not error.error_type == "punct-aistton"]
+
+
 def fix_hidden_by_aistton(
     d_errors: list[ErrorData],
 ) -> list[ErrorData]:
@@ -107,15 +109,13 @@ def fix_hidden_by_aistton(
         error: ErrorData,
     ) -> ErrorData:
         if error.error_type == "punct-aistton-left":
-            return (
-                ErrorData(
-                    error_string=error.error_string[1:],
-                    start=error.start + 1,
-                    end=error.end,
-                    error_type=error.error_type,
-                    explanation=error.explanation,
-                    suggestions=[suggestion[1:] for suggestion in error.suggestions],
-                )
+            return ErrorData(
+                error_string=error.error_string[1:],
+                start=error.start + 1,
+                end=error.end,
+                error_type=error.error_type,
+                explanation=error.explanation,
+                suggestions=tuple(suggestion[1:] for suggestion in error.suggestions),
             )
         if error.error_type == "punct-aistton-right":
             return ErrorData(
@@ -124,7 +124,7 @@ def fix_hidden_by_aistton(
                 end=error.end - 1,
                 error_type=error.error_type,
                 explanation=error.explanation,
-                suggestions=[suggestion[:-1] for suggestion in error.suggestions],
+                suggestions=tuple(suggestion[:-1] for suggestion in error.suggestions),
             )
 
         return ErrorData(
@@ -133,7 +133,7 @@ def fix_hidden_by_aistton(
             end=error.end - 1,
             error_type=error.error_type,
             explanation=error.explanation,
-            suggestions=[suggestion[1:-1] for suggestion in error.suggestions],
+            suggestions=tuple(suggestion[1:-1] for suggestion in error.suggestions),
         )
 
     aistton_ranges = [

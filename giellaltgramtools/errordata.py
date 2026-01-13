@@ -8,14 +8,14 @@ from dataclasses import dataclass, field
 from corpustools.error_annotated_sentence import ErrorMarkup
 
 
-@dataclass
+@dataclass(frozen=True)
 class ErrorData:
     error_string: str
     start: int
     end: int
     error_type: str
     explanation: str
-    suggestions: list[str] = field(default_factory=list)
+    suggestions: tuple[str, ...] = field(default_factory=tuple)
 
 
 def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> ErrorData:
@@ -36,7 +36,7 @@ def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> Er
         explanation=error_markup.correction.error_info
         if error_markup.correction.error_info is not None
         else "",
-        suggestions=error_markup.correction.suggestions,
+        suggestions=tuple(error_markup.correction.suggestions),
     )
 
     return error_data
