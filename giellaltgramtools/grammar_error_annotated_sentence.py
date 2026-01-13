@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 from corpustools.error_annotated_sentence import ErrorAnnotatedSentence
 
+from giellaltgramtools.divvun_checker_fixes import fix_aistton, sort_by_range
 from giellaltgramtools.errordata import (
     ErrorData,
     divvun_checker_to_error_data,
@@ -37,11 +38,32 @@ def error_annotated_sentence_to_grammar_error_annotated_sentence(
 def divvun_checker_output_to_grammar_error_annotated_sentence(
     divvun_checker_output: str,
 ) -> GrammarErrorAnnotatedSentence:
-    divvun_json = json.loads(divvun_checker_output)
+    gram_error = json.loads(divvun_checker_output)
     return GrammarErrorAnnotatedSentence(
-        sentence=divvun_json.get("text"),
-        errors=[
-            divvun_checker_to_error_data(checker_error)
-            for checker_error in divvun_json.get("errs")
-        ],
+        sentence=gram_error.get("text"),
+            errors=sort_by_range(fix_aistton(
+                [
+                    divvun_checker_to_error_data(d_error)
+                    for d_error in gram_error.get("errs")
+                ]
+            )),
     )
+
+def fix_paragraphs(
+    result_str: str,
+) -> list[GrammarErrorAnnotatedSentence]:
+    """Convert divvun-checker output to a list of GrammarErrorAnnotatedSentence.
+
+    Args:
+        result_str: divvun-checker output as a string.
+            Each line is a JSON object containing the grammar checker's
+            result of an input string.
+    Returns:
+        List of GrammarErrorAnnotatedSentence.
+    """
+    return [
+        divvun_checker_output_to_grammar_error_annotated_sentence(gram_error)
+        for gram_error in result_str.strip().split("\n")
+    ]
+
+

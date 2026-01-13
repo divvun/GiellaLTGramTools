@@ -15,7 +15,6 @@ from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import (
     GramChecker,
     check_paragraphs_in_parallel,
-    fix_paragraphs,
 )
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
@@ -115,13 +114,9 @@ class YamlGramChecker(GramChecker):
             self.make_error_datas()
         )
 
-        # Use the same function regardless of checker type
-        # The conversion happens automatically inside check_paragraphs_in_parallel
-        result_str = check_paragraphs_in_parallel(
+        grammar_datas = check_paragraphs_in_parallel(
             self.checker, [error_data.sentence for error_data in error_datas]
         )
-
-        grammar_datas = fix_paragraphs(result_str)
 
         for item in zip(error_datas, grammar_datas, strict=True):
             test_sentence = item[0].sentence

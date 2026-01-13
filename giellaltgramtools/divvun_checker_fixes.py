@@ -3,6 +3,16 @@ from typing import Iterator
 from giellaltgramtools.errordata import ErrorData
 
 
+def sort_by_range(errors: Iterator[ErrorData]) -> list[ErrorData]:
+    """Sort error data by their range in the text.
+
+    Args:
+        errors (list[ErrorData]): List of error data to sort.
+    Returns:
+        List of ErrorData sorted by their start and end positions.
+    """
+    return sorted(errors, key=lambda error: (error.start, error.end))
+
 def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
     """Split divvun-checker punct-aistton-both error into two separate errors.
 
@@ -146,3 +156,34 @@ def fix_hidden_by_aistton(
         fix_hidden_error(error) if is_hidden_error(error) else error
         for error in d_errors
     ]
+
+def fix_aistton(
+    d_errors: list[ErrorData],
+) -> Iterator[ErrorData]:
+    """Rearrange GramDivvun aistton errors to match the Giella markup format.
+
+    GramDivvun marks up errors with wrong quotemarks by including the word next to
+    the quote marks.
+
+    The manual error markup, on the other hand, only marks up the quote marks.
+
+    Args:
+        d_errors: List of GramDivvun errors.
+    Returns:
+        Iterator of GramDivvun errors with aistton errors fixed.
+    """
+    for d_error in fix_hidden_by_aistton(d_errors):
+        # Skip punct-aistton errors
+        # punct-aistton are emitted together with
+        # punct-aistton-left and punct-aistton-right
+        if d_error.error_type != "punct-aistton":
+            if d_error.error_type == "punct-aistton-both":
+                yield from fix_aistton_both(d_error)
+            elif d_error.error_type == "punct-aistton-left":
+                yield fix_aistton_left(d_error)
+            elif d_error.error_type == "punct-aistton-right":
+                yield fix_aistton_right(d_error)
+            else:
+                yield d_error
+
+
