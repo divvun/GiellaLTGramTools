@@ -5,7 +5,6 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 
 """Parser for divvun-runtime output."""
-
 import json
 import re
 from dataclasses import dataclass
@@ -95,8 +94,13 @@ def parse_runtime_response(output: str) -> DivvunRuntime:
     # First, strip ANSI color codes
     clean_output = strip_ansi_codes(output)
 
-    # Find the JSON object boundaries
-    json_start = clean_output.find("{")
+    # Find "text": which is guaranteed to be in the JSON object
+    text_key = clean_output.find('"text":')
+    if text_key == -1:
+        return DivvunRuntime(text="", errors=[], encoding="utf-8")
+
+    # Search backwards from "text": to find the opening brace of the JSON object
+    json_start = clean_output.rfind("{", 0, text_key)
     if json_start == -1:
         return DivvunRuntime(text="", errors=[], encoding="utf-8")
 
