@@ -8,19 +8,41 @@
 
 import json
 import re
-from typing import Any
+from dataclasses import dataclass
+
+from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.grammar_error_annotated_sentence import (
+    GrammarErrorAnnotatedSentence,
+)
+
+
+@dataclass(frozen=True)
+class DivvunRuntimeError:
+    form: str
+    start: int
+    end: int
+    error_id: str
+    description: str
+    suggestions: tuple[str]
+
+
+@dataclass
+class DivvunRuntime:
+    text: str
+    errors: list[DivvunRuntimeError]
+    encoding: str = "utf-8"
 
 
 def strip_ansi_codes(text: str) -> str:
     """Remove ANSI color codes from text.
-    
+
     ANSI color codes follow the pattern:
     - ESC[<params>m where ESC is \x1b or \033
     - Can also have format like [48;2;R;G;Bm for 24-bit colors
-    
+
     Args:
         text: String potentially containing ANSI escape codes
-        
+
     Returns:
         Clean string without ANSI codes
     """
@@ -29,252 +51,172 @@ def strip_ansi_codes(text: str) -> str:
     # \[ (opening bracket)
     # [0-9;]+ (parameters like 48;2;239;241;245)
     # [a-zA-Z] (final character like 'm', 'K', etc.)
-    ansi_escape = re.compile(r'\x1b\[[0-9;]*[a-zA-Z]')
-    return ansi_escape.sub('', text)
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
+    return ansi_escape.sub("", text)
 
 
-def extract_json_from_runtime_output(output: str) -> str:
+def find_json_end(text: str, start_index: int) -> int:
+    """Find the end index of a JSON object starting from start_index.
+
+    This function counts opening and closing braces to find the matching
+    closing brace for the JSON object.
+
+    Args:
+        text: The full text containing JSON
+        start_index: The index where the JSON object starts (the '{' character)
+    Returns:
+        The index just after the closing '}' of the JSON object
+    """
+    brace_count = 0
+    for i in range(start_index, len(text)):
+        if text[i] == "{":
+            brace_count += 1
+        elif text[i] == "}":
+            brace_count -= 1
+            if brace_count == 0:
+                return i + 1  # Return index after the closing brace
+    return -1  # Not found
+
+
+def parse_runtime_response(output: str) -> DivvunRuntime:
     """Extract clean JSON from divvun-runtime output.
-    
+
     divvun-runtime may output:
     - ANSI color codes for pretty printing
     - Log messages to stderr (should be filtered by subprocess)
     - The actual JSON response
-    
+
     Args:
         output: Raw output from divvun-runtime
-        
+
     Returns:
-        Clean JSON string
+        DivvunRuntime: Parsed DivvunRuntime object
     """
     # First, strip ANSI color codes
     clean_output = strip_ansi_codes(output)
-    
+
     # Find the JSON object boundaries
-    json_start = clean_output.find('{')
+    json_start = clean_output.find("{")
     if json_start == -1:
-        return "{}"
-    
-    # Count braces to find the complete JSON object
-    brace_count = 0
-    json_end = -1
-    for i in range(json_start, len(clean_output)):
-        if clean_output[i] == '{':
-            brace_count += 1
-        elif clean_output[i] == '}':
-            brace_count -= 1
-            if brace_count == 0:
-                json_end = i + 1
-                break
-    
+        return DivvunRuntime(text="", errors=[], encoding="utf-8")
+
+    json_end = find_json_end(clean_output, json_start)
+
     if json_end == -1:
-        return "{}"
+        return DivvunRuntime(text="", errors=[], encoding="utf-8")
+
+    data = json.loads(clean_output[json_start:json_end])
     
-    return clean_output[json_start:json_end]
+    return DivvunRuntime(
+        text=data.get("text", ""),
+        errors=[
+        DivvunRuntimeError(
+            form=error["form"],
+            start=error["start"],
+            end=error["end"],
+            error_id=error["error_id"],
+            description=error["description"],
+            suggestions=tuple(error.get("suggestions", [])),
+        )
+        for error in data.get("errors", [])
+    ],
+        encoding=data.get("encoding", "utf-8"),
+    )
 
 
-def parse_runtime_response(output: str) -> dict[str, Any]:
-    """Parse divvun-runtime JSON response.
-    
+def runtime_to_char_offsets(runtime_response: DivvunRuntime) -> DivvunRuntime:
+    """Convert all error offsets from byte to character offsets.
+
     Args:
-        output: Raw output from divvun-runtime command
-        
+        runtime_response: DivvunRuntime object with byte offsets
     Returns:
-        Parsed JSON as dictionary with keys: text, errors, encoding
-        Returns empty dict on parse error
+        DivvunRuntime object with character offsets
     """
-    json_str = extract_json_from_runtime_output(output)
-    
-    try:
-        return json.loads(json_str)
-    except json.JSONDecodeError:
-        return {"text": "", "errors": [], "encoding": "utf-8"}
+    text = runtime_response.text
+
+    return DivvunRuntime(
+        text=runtime_response.text,
+        errors=[
+            DivvunRuntimeError(
+                form=error.form,
+                start=byte_offset_to_char_offset(text, error.start),
+                end=byte_offset_to_char_offset(text, error.end),
+                error_id=error.error_id,
+                description=error.description,
+                suggestions=error.suggestions,
+            )
+            for error in runtime_response.errors
+        ],
+        encoding=runtime_response.encoding,
+    )
 
 
-def split_runtime_output_by_lines(runtime_response: dict[str, Any]) -> list[dict[str, Any]]:
-    """Split divvun-runtime output into separate results for each line.
-    
-    divvun-runtime treats entire input as one text block, but divvun-checker
-    processes each line separately. This function splits the runtime output
-    to match checker behavior.
-    
-    IMPORTANT: This function must convert byte offsets to character offsets
-    before splitting, since line boundaries are defined by character positions.
-    
+def errordata_from_runtime(
+    errors: list[DivvunRuntimeError], sentence_start: int, sentence_end: int
+) -> list[ErrorData]:
+    """Find errors that belong to this sentence."""
+    return [
+        ErrorData(
+            error_string=error.form,
+            start=error.start - sentence_start,
+            end=error.end - sentence_start,
+            error_type=error.error_id,
+            explanation=error.description,
+            suggestions=error.suggestions,
+        )
+        for error in errors
+        if sentence_start <= error.start < sentence_end
+    ]
+
+
+def split_json_by_sentences(
+    orig_divvun_runtime: DivvunRuntime,
+) -> list[GrammarErrorAnnotatedSentence]:
+    """Split a DivvunRuntime string with multiple sentences into separate objects.
+
     Args:
-        runtime_response: Parsed JSON from divvun-runtime with keys:
-            - text: Full input text (may contain \n)
-            - errors: List of error objects with byte offsets
-            - encoding: Text encoding
-    
+        input_str: JSON string representing DivvunRuntime data.
+
     Returns:
-        List of dictionaries, one per line, each with:
-            - text: Single line of text
-            - errors: Errors for that line only (with character offsets adjusted to line start)
+        List of GrammarErrorAnnotatedSentence, one per sentence.
     """
-    text = runtime_response.get("text", "")
-    all_errors = runtime_response.get("errors", [])
-    
-    # First, convert all error offsets from bytes to characters
-    char_errors = []
-    for error in all_errors:
-        byte_start = error.get("start", 0)
-        byte_end = error.get("end", 0)
-        
-        # Convert byte offsets to character offsets
-        char_start = byte_offset_to_char_offset(text, byte_start)
-        char_end = byte_offset_to_char_offset(text, byte_end)
-        
-        # Create new error with character offsets
-        char_error = error.copy()
-        char_error["start"] = char_start
-        char_error["end"] = char_end
-        char_errors.append(char_error)
-    
-    # Split text by newlines
-    lines = text.split("\n")
-    results = []
-    
-    # Calculate line boundaries in character offsets
-    line_start = 0
-    for line_text in lines:
-        line_end = line_start + len(line_text)
-        
-        # Find errors that fall within this line
-        line_errors = []
-        for error in char_errors:
-            error_start = error.get("start", 0)
-            error_end = error.get("end", 0)
-            
-            # Check if error is within this line's boundaries
-            if line_start <= error_start < line_end and error_end <= line_end:
-                # Adjust error positions relative to line start
-                adjusted_error = error.copy()
-                adjusted_error["start"] = error_start - line_start
-                adjusted_error["end"] = error_end - line_start
-                line_errors.append(adjusted_error)
-        
-        results.append({
-            "text": line_text,
-            "errors": line_errors
-        })
-        
-        # Move to next line (add 1 for the \n character)
-        line_start = line_end + 1
-    
-    return results
+    text = orig_divvun_runtime.text
+    errors = orig_divvun_runtime.errors
+
+    # Split text by newlines (sentences)
+    sentences = text.split("\n")
+
+    # Track position in original text
+    current_pos = 0
+
+    new_data: list[GrammarErrorAnnotatedSentence] = []
+    for sentence in sentences:
+        sentence_end = current_pos + len(sentence)
+        new_data.append(
+            GrammarErrorAnnotatedSentence(
+                sentence=sentence,
+                errors=errordata_from_runtime(
+                    errors, sentence_start=current_pos, sentence_end=sentence_end
+                ),
+            )
+        )
+        current_pos = sentence_end + 1
+
+    return new_data
 
 
 def byte_offset_to_char_offset(text: str, byte_offset: int) -> int:
     """Convert byte offset to character offset in UTF-8 text.
-    
+
     Args:
         text: The text string
         byte_offset: Byte offset in UTF-8 encoding
-        
+
     Returns:
         Character offset (position in the string)
     """
     # Encode to bytes and take the substring up to byte_offset
-    byte_text = text.encode('utf-8')
+    byte_text = text.encode("utf-8")
     # Decode the substring to get character count
-    char_text = byte_text[:byte_offset].decode('utf-8', errors='ignore')
+    char_text = byte_text[:byte_offset].decode("utf-8", errors="ignore")
     return len(char_text)
-
-
-def convert_runtime_error_to_checker_format(error: dict[str, Any]) -> list[Any]:
-    """Convert a divvun-runtime error object to divvun-checker format.
-    
-    NOTE: This function now expects errors with character offsets (already converted).
-    
-    Runtime format:
-    {
-      "form": "leam",
-      "start": 4,  # character offset (already converted from bytes)
-      "end": 8,    # character offset (already converted from bytes)
-      "error_id": "err-typo",
-      "title": "Spelling error",
-      "description": "Not in the dictionary.",
-      "suggestions": []
-    }
-    
-    Checker format (list):
-    ["leam", 4, 8, "typo", "Ii leat sátnelisttus", [], "Čállinmeattáhus"]
-    [form, start, end, error_type, description, suggestions, title]
-    
-    Args:
-        error: Error dict from divvun-runtime (with character offsets)
-        
-    Returns:
-        List in divvun-checker format
-    """
-    # Remove "err-" prefix from error_id to get error type
-    error_id = error.get("error_id", "")
-    error_type = error_id.replace("err-", "") if error_id.startswith("err-") else error_id
-    
-    return [
-        error.get("form", ""),
-        error.get("start", 0),  # Already character offset
-        error.get("end", 0),    # Already character offset
-        error_type,
-        error.get("description", ""),
-        error.get("suggestions", []),
-        error.get("title", "")
-    ]
-
-
-def convert_runtime_to_checker_format(runtime_response: dict[str, Any]) -> list[dict[str, Any]]:
-    """Convert divvun-runtime response to divvun-checker format.
-    
-    Converts from runtime's single-response format to checker's
-    line-by-line format.
-    
-    Args:
-        runtime_response: Parsed JSON from divvun-runtime
-        
-    Returns:
-        List of dicts in divvun-checker format, one per line:
-        {"text": "line text", "errs": [[form, start, end, type, desc, suggs, title], ...]}
-    """
-    # Split by lines and convert byte offsets to character offsets
-    line_results = split_runtime_output_by_lines(runtime_response)
-    
-    checker_format = []
-    for line_result in line_results:
-        # Convert errors (they already have character offsets from split function)
-        checker_errors = [
-            convert_runtime_error_to_checker_format(err)
-            for err in line_result["errors"]
-        ]
-        
-        checker_format.append({
-            "text": line_result["text"],
-            "errs": checker_errors
-        })
-    
-    return checker_format
-
-
-def runtime_output_to_checker_json_lines(output: str) -> str:
-    """Convert raw divvun-runtime output to divvun-checker JSON lines format.
-    
-    This is the main conversion function that takes raw runtime output
-    and returns newline-separated JSON objects matching checker format.
-    
-    Args:
-        output: Raw output from divvun-runtime command (may include ANSI codes)
-        
-    Returns:
-        String with one JSON object per line, matching divvun-checker format
-    """
-    # Parse runtime output
-    runtime_response = parse_runtime_response(output)
-    
-    # Convert to checker format
-    checker_results = convert_runtime_to_checker_format(runtime_response)
-    
-    # Convert to JSON lines (one JSON object per line)
-    json_lines = [json.dumps(result, ensure_ascii=False) for result in checker_results]
-    
-    # Ensure each line ends with newline
-    return "\n".join(json_lines) + "\n" if json_lines else ""
