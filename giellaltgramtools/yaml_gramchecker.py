@@ -121,7 +121,7 @@ class YamlGramChecker(GramChecker):
             self.checker, [error_data.sentence for error_data in error_datas]
         )
 
-        grammar_datas = fix_paragraphs(self.checker, result_str)
+        grammar_datas = fix_paragraphs(result_str)
 
         for item in zip(error_datas, grammar_datas, strict=True):
             test_sentence = item[0].sentence

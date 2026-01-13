@@ -76,7 +76,6 @@ def sort_by_range(
 
 
 def fix_paragraphs(
-    command: str,
     result_str: str,
 ) -> list[GrammarErrorAnnotatedSentence]:
     """Fix grammar of a paragraphs.
@@ -94,7 +93,7 @@ def fix_paragraphs(
             sentence=gram_error.get("text"),
             errors=[
                 divvun_checker_to_error_data(fixed_error)
-                for fixed_error in fix_all_errors(command, gram_error.get("errs"))
+                for fixed_error in fix_all_errors(gram_error.get("errs"))
             ],
         )
         for gram_error in json.loads(f"[{','.join(lines)}]")
@@ -102,7 +101,6 @@ def fix_paragraphs(
 
 
 def fix_all_errors(
-    command: str,
     d_errors: list[tuple[str, int, int, str, str, list[str], str]],
 ) -> list[tuple[str, int, int, str, str, list[str], str]]:
     """Remove errors that cover the same area of the typo and msyn types."""
