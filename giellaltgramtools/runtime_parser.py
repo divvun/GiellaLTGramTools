@@ -201,23 +201,28 @@ def runtime_to_grammar_error_annotated_sentences(
     new_data: list[GrammarErrorAnnotatedSentence] = []
     for sentence in sentences:
         sentence_end = current_pos + len(sentence)
-        new_data.append(
-            GrammarErrorAnnotatedSentence(
-                sentence=sentence,
-                errors=sort_by_range(
-                    fix_aistton(
-                        divvun_runtime_to_aistton(error)
-                        if error.error_type == "quotation-marks"
-                        else error
-                        for error in runtime_to_errordatas(
-                            errors,
-                            sentence_start=current_pos,
-                            sentence_end=sentence_end,
+        try:
+            new_data.append(
+                GrammarErrorAnnotatedSentence(
+                    sentence=sentence,
+                    errors=sort_by_range(
+                        fix_aistton(
+                            divvun_runtime_to_aistton(error)
+                            if error.error_type == "quotation-marks"
+                            else error
+                            for error in runtime_to_errordatas(
+                                errors,
+                                sentence_start=current_pos,
+                                sentence_end=sentence_end,
+                            )
                         )
-                    )
-                ),
+                    ),
+                )
             )
-        )
+        except ValueError as error:
+            print(f"Warning: Skipping sentence due to error: {error}")
+            print(f"Sentence text: {sentence!r}")
+            print(f"Errors: {errors!r}")
         current_pos = sentence_end + 1
 
     return new_data
