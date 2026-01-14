@@ -113,9 +113,7 @@ class YamlGramChecker(GramChecker):
                 )
 
     def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
-        error_datas: list[GrammarErrorAnnotatedSentence] = list(
-            self.make_error_datas()
-        )
+        error_datas: list[GrammarErrorAnnotatedSentence] = list(self.make_error_datas())
 
         grammar_datas = check_paragraphs_in_parallel(
             self.checker, [error_data.sentence for error_data in error_datas]

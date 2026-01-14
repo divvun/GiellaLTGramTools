@@ -82,9 +82,9 @@ class GramChecker:
 
     def remove_foreign(
         self,
-        marked_errors: list[ErrorData],
-        found_errors: list[ErrorData],
-    ) -> tuple[list[ErrorData], list[ErrorData]]:
+        marked_errors: tuple[ErrorData, ...],
+        found_errors: tuple[ErrorData, ...],
+    ) -> tuple[tuple[ErrorData, ...], tuple[ErrorData, ...]]:
         """Remove foreign language error elements."""
         foreign_ranges = [
             (marked_error.start, marked_error.end)
@@ -92,12 +92,14 @@ class GramChecker:
             if marked_error.error_type == "errorlang"
         ]
         return (
-            [
+            tuple(
+
                 marked_error
                 for marked_error in marked_errors
                 if marked_error.error_type != "errorlang"
-            ],
-            [
+            ),
+            tuple(
+
                 found_error
                 for found_error in found_errors
                 if not any(
@@ -105,33 +107,35 @@ class GramChecker:
                     and found_error.end <= foreign_range[1]
                     for foreign_range in foreign_ranges
                 )
-            ],
+            ),
         )
 
     def remove_typo(
         self,
-        marked_errors: list[ErrorData],
-        found_errors: list[ErrorData],
-    ) -> tuple[list[ErrorData], list[ErrorData]]:
+        marked_errors: tuple[ErrorData, ...],
+        found_errors: tuple[ErrorData, ...],
+    ) -> tuple[tuple[ErrorData, ...], tuple[ErrorData, ...]]:
         """Remove typos from test material."""
         return (
-            [
+            tuple(
+
                 marked_error
                 for marked_error in marked_errors
                 if marked_error.error_type != "errorort"
-            ],
-            [
+            ),
+            tuple(
+
                 found_error
                 for found_error in found_errors
                 if found_error.error_type != "typo"
-            ],
+            ),
         )
 
     def clean_data(
         self,
         sentence: str,
-        expected_errors: list[ErrorData],
-        gramcheck_errors: list[ErrorData],
+        expected_errors: tuple[ErrorData, ...],
+        gramcheck_errors: tuple[ErrorData, ...],
         filename: str,
     ) -> TestData:
         """Extract data for reporting from a paragraph."""

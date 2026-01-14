@@ -5,10 +5,10 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 
 """Parser for divvun-runtime output."""
-
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from pprint import pprint
 
 from giellaltgramtools.divvun_checker_fixes import fix_aistton
 from giellaltgramtools.divvun_runtime_fixes import divvun_runtime_to_aistton
@@ -198,34 +198,42 @@ def runtime_to_grammar_error_annotated_sentences(
     # Track position in original text
     current_pos = 0
 
-    new_data: list[GrammarErrorAnnotatedSentence] = []
+    new_datas: list[GrammarErrorAnnotatedSentence] = []
     for sentence in sentences:
         sentence_end = current_pos + len(sentence)
+        new_datas.append(
+            GrammarErrorAnnotatedSentence(
+                sentence=sentence,
+                errors=runtime_to_errordatas(
+                    errors,
+                    sentence_start=current_pos,
+                    sentence_end=sentence_end,
+                ),
+            )
+        )
+        current_pos = sentence_end + 1
+
+    oi: list[GrammarErrorAnnotatedSentence] = []
+    for new_data in new_datas:
         try:
-            new_data.append(
+            oi.append(
                 GrammarErrorAnnotatedSentence(
-                    sentence=sentence,
+                    sentence=new_data.sentence,
                     errors=sort_by_range(
                         fix_aistton(
                             divvun_runtime_to_aistton(error)
                             if error.error_type == "quotation-marks"
                             else error
-                            for error in runtime_to_errordatas(
-                                errors,
-                                sentence_start=current_pos,
-                                sentence_end=sentence_end,
-                            )
+                            for error in new_data.errors
                         )
                     ),
                 )
             )
         except ValueError as error:
-            print(f"Warning: Skipping sentence due to error: {error}")
-            print(f"Sentence text: {sentence!r}")
-            print(f"Errors: {errors!r}")
-        current_pos = sentence_end + 1
-
-    return new_data
+            print("Failed")
+            pprint(asdict(new_data))
+            print(f"{error!r}")
+    return oi
 
 
 def byte_offset_to_char_offset(text: str, byte_offset: int) -> int:

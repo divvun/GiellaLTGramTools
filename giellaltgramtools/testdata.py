@@ -3,7 +3,7 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from giellaltgramtools.errordata import ErrorData
 
@@ -12,5 +12,5 @@ from giellaltgramtools.errordata import ErrorData
 class TestData:
     uncorrected: str
     filename: str
-    expected_errors: list[ErrorData] = field(default_factory=list)
-    gramcheck_errors: list[ErrorData] = field(default_factory=list)
+    expected_errors: tuple[ErrorData, ...]
+    gramcheck_errors: tuple[ErrorData, ...]
