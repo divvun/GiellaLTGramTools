@@ -136,15 +136,18 @@ def fix_hidden_by_aistton(
             suggestions=tuple(suggestion[1:-1] for suggestion in error.suggestions),
         )
 
+    # Convert to list to allow multiple iterations
+    d_errors_list = list(d_errors)
+    
     aistton_ranges = [
         (error.start, error.end)
-        for error in d_errors
+        for error in d_errors_list
         if error.error_type
         in ["punct-aistton-both", "punct-aistton-left", "punct-aistton-right"]
     ]
     return [
         fix_hidden_error(error) if is_hidden_error(error) else error
-        for error in d_errors
+        for error in d_errors_list
     ]
 
 def fix_aistton(

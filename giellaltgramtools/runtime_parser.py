@@ -5,12 +5,15 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 
 """Parser for divvun-runtime output."""
+
 import json
 import re
 from dataclasses import dataclass
 
+from giellaltgramtools.divvun_checker_fixes import fix_aistton
+from giellaltgramtools.divvun_runtime_fixes import divvun_runtime_to_aistton
 from giellaltgramtools.errordata import ErrorData
-from giellaltgramtools.errordatas import ErrorDatas
+from giellaltgramtools.errordatas import ErrorDatas, sort_by_range
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
 )
@@ -201,8 +204,17 @@ def runtime_to_grammar_error_annotated_sentences(
         new_data.append(
             GrammarErrorAnnotatedSentence(
                 sentence=sentence,
-                errors=runtime_to_errordatas(
-                    errors, sentence_start=current_pos, sentence_end=sentence_end
+                errors=sort_by_range(
+                    fix_aistton(
+                        divvun_runtime_to_aistton(error)
+                        if error.error_type == "quotation-marks"
+                        else error
+                        for error in runtime_to_errordatas(
+                            errors,
+                            sentence_start=current_pos,
+                            sentence_end=sentence_end,
+                        )
+                    )
                 ),
             )
         )
