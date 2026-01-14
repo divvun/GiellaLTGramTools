@@ -1,18 +1,7 @@
 from typing import Iterable, Iterator
 
 from giellaltgramtools.errordata import ErrorData
-from giellaltgramtools.errordatas import ErrorDatas
 
-
-def sort_by_range(errors: Iterable[ErrorData]) -> ErrorDatas:
-    """Sort error data by their range in the text.
-
-    Args:
-        errors (Iterable[ErrorData]): List of error data to sort.
-    Returns:
-        ErrorDatas sorted by their start and end positions.
-    """
-    return tuple(sorted(errors, key=lambda error: (error.start, error.end)))
 
 def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
     """Split divvun-checker punct-aistton-both error into two separate errors.

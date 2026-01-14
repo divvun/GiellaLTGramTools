@@ -3,13 +3,13 @@ from dataclasses import dataclass
 
 from corpustools.error_annotated_sentence import ErrorAnnotatedSentence
 
-from giellaltgramtools.divvun_checker_fixes import fix_aistton, sort_by_range
+from giellaltgramtools.divvun_checker_fixes import fix_aistton
 from giellaltgramtools.errordata import (
     ErrorData,
     divvun_checker_to_error_data,
     error_markup_to_error_data,
 )
-from giellaltgramtools.errordatas import ErrorDatas
+from giellaltgramtools.errordatas import ErrorDatas, sort_by_range
 
 
 @dataclass(frozen=True)
