@@ -1,17 +1,18 @@
-from typing import Iterator
+from typing import Iterable, Iterator
 
 from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.errordatas import ErrorDatas
 
 
-def sort_by_range(errors: Iterator[ErrorData]) -> list[ErrorData]:
+def sort_by_range(errors: Iterable[ErrorData]) -> ErrorDatas:
     """Sort error data by their range in the text.
 
     Args:
-        errors (list[ErrorData]): List of error data to sort.
+        errors (Iterable[ErrorData]): List of error data to sort.
     Returns:
-        List of ErrorData sorted by their start and end positions.
+        ErrorDatas sorted by their start and end positions.
     """
-    return sorted(errors, key=lambda error: (error.start, error.end))
+    return tuple(sorted(errors, key=lambda error: (error.start, error.end)))
 
 def fix_aistton_both(aistton_both: ErrorData) -> Iterator[ErrorData]:
     """Split divvun-checker punct-aistton-both error into two separate errors.
@@ -90,8 +91,8 @@ def remove_aistton(errors: list[ErrorData]) -> list[ErrorData]:
 
 
 def fix_hidden_by_aistton(
-    d_errors: list[ErrorData],
-) -> list[ErrorData]:
+    d_errors: Iterable[ErrorData],
+) -> Iterable[ErrorData]:
     """Fix errors hidden by aistton-both errors.
 
     A GramDivvun error of type aistton-both can contain some other error.
@@ -158,7 +159,7 @@ def fix_hidden_by_aistton(
     ]
 
 def fix_aistton(
-    d_errors: list[ErrorData],
+    d_errors: Iterable[ErrorData],
 ) -> Iterator[ErrorData]:
     """Rearrange GramDivvun aistton errors to match the Giella markup format.
 
@@ -168,7 +169,7 @@ def fix_aistton(
     The manual error markup, on the other hand, only marks up the quote marks.
 
     Args:
-        d_errors: List of GramDivvun errors.
+        d_errors: Iterable of GramDivvun errors.
     Returns:
         Iterator of GramDivvun errors with aistton errors fixed.
     """

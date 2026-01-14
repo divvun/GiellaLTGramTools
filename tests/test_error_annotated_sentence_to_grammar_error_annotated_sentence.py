@@ -20,7 +20,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
         (
             "no errors",
             ErrorAnnotatedSentence(head="wrong", errors=[]),
-            GrammarErrorAnnotatedSentence(sentence="wrong", errors=[]),
+            GrammarErrorAnnotatedSentence(sentence="wrong", errors=()),
         ),
         (
             "single error",
@@ -44,7 +44,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
             ),
             GrammarErrorAnnotatedSentence(
                 sentence="molekylærbiologimi",
-                errors=[
+                errors=(
                     ErrorData(
                         error_string="molekylærbiologimi",
                         start=0,
@@ -52,8 +52,8 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         error_type="errorlang",
                         explanation="kal,bio",
                         suggestions=("",),
-                    )
-                ],
+                    ),
+                ),
             ),
         ),
         (
@@ -87,7 +87,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
             ),
             GrammarErrorAnnotatedSentence(
                 sentence="a e1 b e2.",
-                errors=[
+                errors=(    
                     ErrorData(
                         error_string="e1",
                         start=2,
@@ -104,7 +104,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         explanation="",
                         suggestions=("c2",),
                     ),
-                ],
+                ),
             ),
         ),
         (
@@ -193,7 +193,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                     "politihkka, muhto rahpasit baicca muitalivčče makkar soga sii "
                     "ovddasttit."
                 ),
-                errors=[
+                errors=(
                     ErrorData(
                         error_string="dáhkaluddame",
                         start=8,
@@ -234,7 +234,7 @@ from giellaltgramtools.grammar_error_annotated_sentence import (
                         explanation="verb,conc",
                         suggestions=("ovddastit",),
                     ),
-                ],
+                ),
             ),
         ),
     ],

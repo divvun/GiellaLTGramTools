@@ -10,6 +10,7 @@ import re
 from dataclasses import dataclass
 
 from giellaltgramtools.errordata import ErrorData
+from giellaltgramtools.errordatas import ErrorDatas
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
 )
@@ -155,11 +156,11 @@ def runtime_to_char_offsets(runtime_response: DivvunRuntime) -> DivvunRuntime:
     )
 
 
-def errordata_from_runtime(
+def runtime_to_errordata(
     errors: list[DivvunRuntimeError], sentence_start: int, sentence_end: int
-) -> list[ErrorData]:
+) -> ErrorDatas:
     """Find errors that belong to this sentence."""
-    return [
+    return tuple(
         ErrorData(
             error_string=error.form,
             start=error.start - sentence_start,
@@ -170,7 +171,7 @@ def errordata_from_runtime(
         )
         for error in errors
         if sentence_start <= error.start < sentence_end
-    ]
+    )
 
 
 def runtime_to_grammar_error_annotated_sentences(
@@ -200,7 +201,7 @@ def runtime_to_grammar_error_annotated_sentences(
         new_data.append(
             GrammarErrorAnnotatedSentence(
                 sentence=sentence,
-                errors=errordata_from_runtime(
+                errors=runtime_to_errordata(
                     errors, sentence_start=current_pos, sentence_end=sentence_end
                 ),
             )

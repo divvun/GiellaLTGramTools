@@ -11,10 +11,10 @@ from giellaltgramtools.runtime_parser import (
     DivvunRuntime,
     DivvunRuntimeError,
     byte_offset_to_char_offset,
-    errordata_from_runtime,
     find_json_end,
     parse_runtime_response,
     runtime_to_char_offsets,
+    runtime_to_errordata,
     runtime_to_grammar_error_annotated_sentences,
     strip_ansi_codes,
 )
@@ -169,7 +169,7 @@ def test_errordata_from_runtime_single_sentence():
         )
     ]
 
-    result = errordata_from_runtime(errors, sentence_start=0, sentence_end=7)
+    result = runtime_to_errordata(errors, sentence_start=0, sentence_end=7)
 
     assert len(result) == 1
     assert result[0].error_string == "lea"
@@ -202,16 +202,16 @@ def test_errordata_from_runtime_multiple_sentences():
     ]
 
     # First sentence: "Mun lea" (0-7)
-    result1 = errordata_from_runtime(errors, sentence_start=0, sentence_end=7)
+    result1 = runtime_to_errordata(errors, sentence_start=0, sentence_end=7)
     assert len(result1) == 1
     assert result1[0].error_string == "lea"
 
     # Second sentence: "Mun badjel" (8-18) - note: no error in this range
-    result2 = errordata_from_runtime(errors, sentence_start=8, sentence_end=18)
+    result2 = runtime_to_errordata(errors, sentence_start=8, sentence_end=18)
     assert len(result2) == 0
 
     # Third sentence with error: (14-26)
-    result3 = errordata_from_runtime(errors, sentence_start=14, sentence_end=26)
+    result3 = runtime_to_errordata(errors, sentence_start=14, sentence_end=26)
     assert len(result3) == 1
     assert result3[0].error_string == "badjel"
     assert result3[0].start == 20 - 14  # Adjusted to sentence start
@@ -230,7 +230,7 @@ def test_errordata_from_runtime_adjusted_positions():
         )
     ]
 
-    result = errordata_from_runtime(errors, sentence_start=5, sentence_end=20)
+    result = runtime_to_errordata(errors, sentence_start=5, sentence_end=20)
 
     assert len(result) == 1
     assert result[0].start == 10 - 5  # 5
