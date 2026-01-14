@@ -97,8 +97,11 @@ class YamlGramChecker(GramChecker):
         """Make GrammarErrorAnnotatedSentence from the test sentences."""
         for index, text in enumerate(self.config.tests):
             if text.strip():
+                modified_text = f"{text}." if text[-1] not in ".!?" else text
                 try:
-                    error_annotated_sentence = parse_markup_to_sentence(iter(text))
+                    error_annotated_sentence = parse_markup_to_sentence(
+                        iter(modified_text)
+                    )
                 except ValueError as error:
                     self.print_error(
                         f"Error parsing test sentence {index + 1}\n{text} in "
