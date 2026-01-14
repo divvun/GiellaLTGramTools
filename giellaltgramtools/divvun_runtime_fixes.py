@@ -12,17 +12,23 @@ def divvun_runtime_to_aistton(
     Returns:
         ErrorData object representing a Giella aistton error.
     """
-    first_suggestion = error_data.suggestions[0] if error_data.suggestions else ""
-    if first_suggestion.startswith("”") and first_suggestion.endswith("”"):
+    if not error_data.suggestions:
+        raise ValueError(
+            f"Cannot convert error with no suggestions to aistton error.\n"
+            f"{error_data!r}"
+        )
+
+    first_suggestion = error_data.suggestions[0]
+    if first_suggestion[0] in "”’" and first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-both"
-    elif first_suggestion.startswith("”"):
+    elif first_suggestion[0] in "”’" :
         new_error_type = "punct-aistton-left"
-    elif first_suggestion.endswith("”"):
+    elif first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-right"
     else:
         raise ValueError(
             f"Cannot convert error with suggestions {error_data.suggestions} "
-            "to aistton error."
+            f"to aistton error.\n{error_data!r}"
         )
 
     # Create new ErrorData object with updated error_type and explanation
