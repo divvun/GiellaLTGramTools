@@ -156,7 +156,7 @@ def runtime_to_char_offsets(runtime_response: DivvunRuntime) -> DivvunRuntime:
     )
 
 
-def runtime_to_errordata(
+def runtime_to_errordatas(
     errors: list[DivvunRuntimeError], sentence_start: int, sentence_end: int
 ) -> ErrorDatas:
     """Find errors that belong to this sentence."""
@@ -201,7 +201,7 @@ def runtime_to_grammar_error_annotated_sentences(
         new_data.append(
             GrammarErrorAnnotatedSentence(
                 sentence=sentence,
-                errors=runtime_to_errordata(
+                errors=runtime_to_errordatas(
                     errors, sentence_start=current_pos, sentence_end=sentence_end
                 ),
             )
