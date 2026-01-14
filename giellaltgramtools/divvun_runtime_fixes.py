@@ -19,6 +19,15 @@ def divvun_runtime_to_aistton(
         )
 
     first_suggestion = error_data.suggestions[0]
+
+    try:
+        first_suggestion[0]
+    except IndexError as error:
+        raise ValueError(
+            f"Cannot convert error with empty suggestions to aistton error.\n"
+            f"{error_data!r}"
+        ) from error
+        
     if first_suggestion[0] in "”’" and first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-both"
     elif first_suggestion[0] in "”’" :
