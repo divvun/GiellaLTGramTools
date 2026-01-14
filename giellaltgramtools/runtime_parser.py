@@ -215,17 +215,24 @@ def runtime_to_grammar_error_annotated_sentences(
 
     oi: list[GrammarErrorAnnotatedSentence] = []
     for new_data in new_datas:
+        new_errors = []
+        for error in new_data.errors:
+            if error.error_type == "quotation-marks":
+                try:
+                    new_errors.append(divvun_runtime_to_aistton(error))
+                except ValueError as error_:
+                    print("Failed")
+                    pprint(asdict(new_data))
+                    print(f"{error_!r}")
+                    new_errors.append(error)
+            else:
+                new_errors.append(error)
         try:
             oi.append(
                 GrammarErrorAnnotatedSentence(
                     sentence=new_data.sentence,
                     errors=sort_by_range(
-                        fix_aistton(
-                            divvun_runtime_to_aistton(error)
-                            if error.error_type == "quotation-marks"
-                            else error
-                            for error in new_data.errors
-                        )
+                        fix_aistton(new_errors)
                     ),
                 )
             )
