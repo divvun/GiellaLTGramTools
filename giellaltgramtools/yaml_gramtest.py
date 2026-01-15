@@ -28,10 +28,19 @@ def has_dupes(tests: list[str]) -> bool:
     """Check if there are duplicate tests."""
     return len(tests) != len(set(tests))
 
-def is_not_dupe(counted_tests: dict[str, int], line: str) -> bool:
-    """Check if there are duplicate tests in the test file."""
+def is_not_dupe(counted_tests: dict[str, int], test_line: str) -> bool:
+    """Check if there are duplicate tests in the test file.
+    
+    Args:
+        counted_tests: A dictionary with test strings as keys and their counts as 
+            values.
+        test_line: A line from the test file.
+
+    Returns:
+        True if the test_line is not a duplicate, False otherwise.
+    """
     if counted_tests:
-        stripped_test_line = line.strip().lstrip("- ").strip()
+        stripped_test_line = test_line.strip().lstrip("- ").strip()
         if stripped_test_line:
             found_test = stripped_test_line[
                 1 : stripped_test_line[1:].find(stripped_test_line[0]) + 1
@@ -46,7 +55,13 @@ def is_not_dupe(counted_tests: dict[str, int], line: str) -> bool:
 def write_deduplicated_file(
     test_file: Path, counted_tests: dict[str, int]
 ) -> None:
-    """Write the file without duplicates."""
+    """Write the file without duplicates.
+    
+    Args:
+        test_file: Path to the test file.
+        counted_tests: A dictionary with test strings as keys and their counts as 
+            values.
+    """
     deduplicated_lines: list = [
         line
         for line in test_file.read_text().splitlines()
