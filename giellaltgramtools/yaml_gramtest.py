@@ -44,17 +44,21 @@ class YamlGramTest(GramTest):
 
         yaml_content = load_yaml_file(filename)
 
-        if self.has_dupes(yaml_content.tests):
-            if ctx.obj.get("remove_dupes", False):
+
+        if ctx.obj.get("remove_dupes", False):
+            if self.has_dupes(yaml_content.tests):
                 self.remove_dupes(filename, yaml_content.tests)
-                sys.exit(0)
             else:
-                print(
-                    f"Error: Duplicate tests found in {filename}. "
-                    f"Use --remove-dupes to automatically remove them.",
-                    file=sys.stderr,
-                )
-                sys.exit(99)
+                click.echo(f"No duplicate tests found in {filename}")
+            sys.exit(0)
+        
+        if self.has_dupes(yaml_content.tests):
+            print(
+                f"Error: Duplicate tests found in {filename}. "
+                f"Use --remove-dupes to automatically remove them.",
+                file=sys.stderr,
+            )
+            sys.exit(99)
 
         yaml_config = YamlConfig(
             output=NoOutput()
@@ -84,7 +88,6 @@ class YamlGramTest(GramTest):
                     1 : stripped_test_line[1:].find(stripped_test_line[0]) + 1
                 ]  # remove surrounding quotes
                 if found_test in counted_tests:
-                    print(f"Checking test line:\n{line}\n{found_test}")
                     counted_tests[found_test] -= 1
                     if counted_tests[found_test] == 1:
                         del counted_tests[found_test]
