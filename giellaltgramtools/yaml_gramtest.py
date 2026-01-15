@@ -3,7 +3,6 @@
 # Copyright © 2020-2024 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
-import re
 import sys
 from collections import Counter
 from io import StringIO
@@ -45,8 +44,17 @@ class YamlGramTest(GramTest):
 
         yaml_content = load_yaml_file(filename)
 
-        if ctx.obj.get("remove_dupes", False):
-            self.remove_dupes(filename, yaml_content.tests)
+        if self.has_dupes(yaml_content.tests):
+            if ctx.obj.get("remove_dupes", False):
+                self.remove_dupes(filename, yaml_content.tests)
+                sys.exit(0)
+            else:
+                print(
+                    f"Error: Duplicate tests found in {filename}. "
+                    f"Use --remove-dupes to automatically remove them.",
+                    file=sys.stderr,
+                )
+                sys.exit(99)
 
         yaml_config = YamlConfig(
             output=NoOutput()
@@ -67,56 +75,52 @@ class YamlGramTest(GramTest):
 
         return yaml_config
 
-    def _get_duplicate_tests(
-        self, tests: list[str]
-    ) -> tuple[set[tuple[str, int]], Counter[str]]:
-        """Identify duplicate tests and return them."""
-        counted_tests = Counter(tests)
-        return {
-            counted_test
-            for counted_test in counted_tests.items()
-            if counted_test[1] > 1
-        }, counted_tests
+    def is_not_dupe(self, counted_tests: dict[str, int], line: str) -> bool:
+        """Check if there are duplicate tests in the test file."""
+        if counted_tests:
+            stripped_test_line = line.strip().lstrip("- ").strip()
+            if stripped_test_line:
+                found_test = stripped_test_line[
+                    1 : stripped_test_line[1:].find(stripped_test_line[0]) + 1
+                ]  # remove surrounding quotes
+                if found_test in counted_tests:
+                    print(f"Checking test line:\n{line}\n{found_test}")
+                    counted_tests[found_test] -= 1
+                    if counted_tests[found_test] == 1:
+                        del counted_tests[found_test]
+                    return False
+        return True
 
-    def _process_test_line(self, line, test_re, counted_tests, temp_stream):
-        """Process a single line from the test file."""
-        match = test_re.search(line.rstrip())
-        if not match:
-            temp_stream.write(line)
-            return
-
-        test_string = match.group("test")[1:-1]
-        if match and match.group("test"):
-            if counted_tests.get(test_string) > 1:
-                counted_tests[test_string] -= 1
-            else:
-                temp_stream.write(line)
-
-    def _write_deduplicated_file(self, test_file: Path, counted_tests):
+    def write_deduplicated_file(
+        self, test_file: Path, counted_tests: dict[str, int]
+    ) -> None:
         """Write the file without duplicates."""
-        test_re = re.compile(
-            r"""^(\s*-\s+)(?P<test>("[^"]+"|'[^']+')).*$""", re.UNICODE
-        )
+        deduplicated_lines: list = [
+            line
+            for line in test_file.read_text().splitlines()
+            if self.is_not_dupe(counted_tests, line)
+        ]
+        test_file.write_text("\n".join(deduplicated_lines) + "\n")
 
-        with StringIO() as temp_stream:
-            for line in test_file.read_text().splitlines(keepends=True):
-                self._process_test_line(line, test_re, counted_tests, temp_stream)
-            test_file.write_text(temp_stream.getvalue())
+    def has_dupes(self, tests: list[str]) -> bool:
+        """Check if there are duplicate tests."""
+        return len(tests) != len(set(tests))
 
     def remove_dupes(self, test_file: Path, tests: list[str]) -> None:
         """Remove duplicate tests from the test file"""
-        dupes, counted_tests = self._get_duplicate_tests(tests)
+        counted_tests = {
+            test: count for test, count in Counter(tests).items() if count > 1
+        }
 
-        if dupes:  # remove duplicates
-            self._write_deduplicated_file(test_file, counted_tests)
-
+        if counted_tests:
             print(
-                f"ERROR: Removed the following dupes in {test_file}\n\n".join(
-                    "\t" + dupe[0] for dupe in dupes
+                f"Removed the following dupes in {test_file}")
+            print("\n".join(
+                    "\t" + dupe for dupe in counted_tests
                 ),
                 file=sys.stderr,
             )
-            sys.exit(99)  # exit code 99 signals hard exit to Make
+            self.write_deduplicated_file(test_file, counted_tests)
 
     @staticmethod
     def yaml_reader(test_file):
