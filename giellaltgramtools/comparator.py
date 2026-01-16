@@ -1,5 +1,4 @@
 """Compare output of divvun-checker with the output of divvun-runtime"""
-
 import os
 import sys
 from collections import Counter
@@ -7,7 +6,7 @@ from pathlib import Path
 
 import click
 
-from giellaltgramtools.yaml_gramtest import has_dupes
+from giellaltgramtools.yaml_gramtest import YamlGramTest, has_dupes
 from giellaltgramtools.yaml_test_file import load_yaml_file
 
 YAML_PREFIX = """Config:
@@ -75,19 +74,16 @@ def test_checker(yaml_dir_path: Path, prefix: str) -> None:
         yaml_dir_path: Path to the directory containing the YAML file.
         prefix: Prefix of the YAML file to test.
     """
-    from giellaltgramtools.gramtool import main as gramtool_main  # noqa: PLC0415
-
     for type_ in ["PASS", "FAIL"]:
         yaml_path = yaml_dir_path / f"{prefix}-{type_}.yaml"
-        sys.argv = [
-            "gramtool",
-            "test",
-            "yaml",
-            "--silent",
-            "--move-tests",
-            str(yaml_path),
-        ]
-        gramtool_main()
+        if yaml_path.exists():
+            print(f"Running divvun-checker tests on {yaml_path}...", flush=True, end=" ")
+            try:
+                run_yaml_tests(yaml_path, use_runtime=False)
+            except SystemExit as exc:  # avoid aborting the whole compare loop
+                if exc.code not in (0, None):
+                    raise
+            print("Done.", flush=True)
 
 
 def test_runtime(yaml_path: Path) -> None:
@@ -96,18 +92,41 @@ def test_runtime(yaml_path: Path) -> None:
     Args:
         yaml_path: Path to the YAML file to test.
     """
-    from giellaltgramtools.gramtool import main as gramtool_main  # noqa: PLC0415
+    print(f"Running divvun-runtime tests on {yaml_path}...", flush=True, end=" ")
+    try:
+        run_yaml_tests(yaml_path, use_runtime=True)
+    except SystemExit as exc:  # keep the compare loop running across prefixes
+        if exc.code not in (0, None):
+            raise
+    print("Done.", flush=True)
 
-    sys.argv = [
-        "gramtool",
-        "test",
-        "--use-runtime",
-        "yaml",
-        "--silent",
-        "--move-tests",
-        str(yaml_path),
-    ]
-    gramtool_main()
+
+def build_yaml_ctx(use_runtime: bool) -> click.Context:
+    """Create a minimal Click context compatible with YamlGramTest."""
+
+    cmd = click.Command("compare-helper")
+    ctx = click.Context(cmd)
+    ctx.obj = {
+        "colour": False,
+        "hide_passes": False,
+        "spec": None,
+        "variant": None,
+        "use_runtime": use_runtime,
+        "output": "silent",
+        "move_tests": True,
+        "remove_dupes": False,
+    }
+    return ctx
+
+
+def run_yaml_tests(yaml_path: Path, use_runtime: bool) -> int:
+    """Run a YAML test file directly through YamlGramTest without sys.exit side-effects."""
+
+    ctx = build_yaml_ctx(use_runtime)
+    tester = YamlGramTest(ctx, yaml_path)
+    ret = tester.run()
+    sys.stdout.write(str(tester))
+    return ret
 
 
 def make_runtime_yaml(yaml_dir_path: Path, prefix: str) -> Path:
