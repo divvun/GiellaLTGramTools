@@ -160,17 +160,7 @@ def build_archive(pipe_spec: str, archive_name: str):
 
 
 @main.command()
-@click.argument("directory", type=click.Path(exists=True))
-@click.option(
-    "-V",
-    "--variant",
-    help="Variant/pipeline to use for comparison",
-)
-@click.option(
-    "--show-known",
-    is_flag=True,
-    help="Show known differences (typo order, parenthesis errors) in output",
-)
-def compare(directory: str, variant: str | None = None, show_known: bool = False):
-    """Compare grammar checker results in a directory."""
-    engine_comparator(directory, variant, show_known)
+@click.argument("language")
+def compare(language: str):
+    """Compare divvun-checker and divvun-runtime test results."""
+    engine_comparator(language)

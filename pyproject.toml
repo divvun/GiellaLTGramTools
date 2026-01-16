@@ -20,7 +20,6 @@ ruff = "^0.14.11"
 
 [tool.poetry.scripts]
 gtgramtool="giellaltgramtools.gramtool:main"
-gtcompare="giellaltgramtools.compare:main"
 
 [build-system]
 requires = ["poetry-core"]
