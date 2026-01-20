@@ -113,7 +113,7 @@ def build_yaml_ctx(use_runtime: bool) -> click.Context:
         "use_runtime": use_runtime,
         "output": "silent",
         "move_tests": True,
-        "remove_dupes": False,
+        "remove_dupes": True,
     }
     return ctx
 
