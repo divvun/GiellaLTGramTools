@@ -91,14 +91,8 @@ def test_runtime(yaml_path: Path) -> None:
     Args:
         yaml_path: Path to the YAML file to test.
     """
-    print(f"Running divvun-runtime tests on {yaml_path}...", flush=True, end=" ")
-    try:
-        run_yaml_tests(yaml_path, use_runtime=True)
-    except SystemExit as exc:  # keep the compare loop running across prefixes
-        if exc.code not in (0, None):
-            raise
-    print("Done.", flush=True)
-
+    print(f"Running divvun-runtime tests on {yaml_path} …")
+    run_yaml_tests(yaml_path, use_runtime=True)
 
 def build_yaml_ctx(use_runtime: bool) -> click.Context:
     """Create a minimal Click context compatible with YamlGramTest."""
@@ -119,7 +113,7 @@ def build_yaml_ctx(use_runtime: bool) -> click.Context:
 
 
 def run_yaml_tests(yaml_path: Path, use_runtime: bool) -> int:
-    """Run a YAML test file directly through YamlGramTest without sys.exit side-effects."""
+    """Run a YAML test file directly through YamlGramTest."""
 
     ctx = build_yaml_ctx(use_runtime)
     tester = YamlGramTest(ctx, yaml_path)
