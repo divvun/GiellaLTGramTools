@@ -1,3 +1,5 @@
+import sys
+
 from giellaltgramtools.errordata import ErrorData
 
 
@@ -13,20 +15,22 @@ def divvun_runtime_to_aistton(
         ErrorData object representing a Giella aistton error.
     """
     if not error_data.suggestions:
-        raise ValueError(
+        print(
             f"Cannot convert error with no suggestions to aistton error.\n"
-            f"{error_data!r}"
+            f"{error_data!r}", file=sys.stderr
         )
+        return error_data
 
     first_suggestion = error_data.suggestions[0]
 
     try:
         first_suggestion[0]
-    except IndexError as error:
-        raise ValueError(
+    except IndexError:
+        print(
             f"Cannot convert error with empty suggestions to aistton error.\n"
-            f"{error_data!r}"
-        ) from error
+            f"{error_data!r}", file=sys.stderr
+        )
+        return error_data
         
     if first_suggestion[0] in "”’" and first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-both"
@@ -35,10 +39,11 @@ def divvun_runtime_to_aistton(
     elif first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-right"
     else:
-        raise ValueError(
+        print(
             f"Cannot convert error with suggestions {error_data.suggestions} "
-            f"to aistton error.\n{error_data!r}"
+            f"to aistton error.\n{error_data!r}", file=sys.stderr
         )
+        return error_data
 
     # Create new ErrorData object with updated error_type and explanation
     new_error_data = ErrorData(

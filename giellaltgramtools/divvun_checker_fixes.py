@@ -56,14 +56,17 @@ def fix_aistton_left(aistton_left: ErrorData) -> ErrorData:
     Returns:
         Fixed ErrorData that mimics the manual error markup.
     """
-    return ErrorData(
-        error_string=aistton_left.error_string[0],
-        start=aistton_left.start,
-        end=aistton_left.start + 1,
-        error_type=aistton_left.error_type,
-        explanation=aistton_left.explanation,
-        suggestions=(aistton_left.suggestions[0][0],),
-    )
+    try:
+        return ErrorData(
+            error_string=aistton_left.error_string[0],
+            start=aistton_left.start,
+            end=aistton_left.start + 1,
+            error_type=aistton_left.error_type,
+            explanation=aistton_left.explanation,
+            suggestions=(aistton_left.suggestions[0][0],),
+        )
+    except IndexError: # Just return the original error if suggestions are missing
+        return aistton_left
 
 
 def remove_aistton(errors: list[ErrorData]) -> list[ErrorData]:
