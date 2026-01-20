@@ -25,7 +25,9 @@ import click
 from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
 from giellaltgramtools.make_grammarchecker_zip import make_archive
-from giellaltgramtools.yaml_gramtest import YamlGramTest
+from giellaltgramtools.yaml_gramchecker import GramCheckerSentenceError
+from giellaltgramtools.yaml_gramtest import YamlDuplicateError, YamlGramTest
+from giellaltgramtools.yaml_test_file import YamlTestFileError
 
 
 @click.group()
@@ -126,6 +128,12 @@ def yaml(  # noqa: PLR0913
         ret = tester.run()
         sys.stdout.write(str(tester))
         sys.exit(ret)
+    except (GramCheckerSentenceError, YamlTestFileError, YamlDuplicateError) as error:
+        print(
+            f"{error}",
+            file=sys.stderr,
+        )
+        sys.exit(99)
     except KeyboardInterrupt:
         sys.exit(130)
 

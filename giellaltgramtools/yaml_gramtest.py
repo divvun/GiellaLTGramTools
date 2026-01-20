@@ -24,15 +24,20 @@ from giellaltgramtools.yaml_gramchecker import YamlGramChecker
 from giellaltgramtools.yaml_test_file import load_yaml_file
 
 
+class YamlDuplicateError(Exception):
+    """Exception for duplicate tests in YAML test files."""
+    pass
+
 def has_dupes(tests: list[str]) -> bool:
     """Check if there are duplicate tests."""
     return len(tests) != len(set(tests))
 
+
 def is_not_dupe(counted_tests: dict[str, int], test_line: str) -> bool:
     """Check if there are duplicate tests in the test file.
-    
+
     Args:
-        counted_tests: A dictionary with test strings as keys and their counts as 
+        counted_tests: A dictionary with test strings as keys and their counts as
             values.
         test_line: A line from the test file.
 
@@ -52,14 +57,13 @@ def is_not_dupe(counted_tests: dict[str, int], test_line: str) -> bool:
                 return False
     return True
 
-def write_deduplicated_file(
-    test_file: Path, counted_tests: dict[str, int]
-) -> None:
+
+def write_deduplicated_file(test_file: Path, counted_tests: dict[str, int]) -> None:
     """Write the file without duplicates.
-    
+
     Args:
         test_file: Path to the test file.
-        counted_tests: A dictionary with test strings as keys and their counts as 
+        counted_tests: A dictionary with test strings as keys and their counts as
             values.
     """
     deduplicated_lines: list = [
@@ -68,7 +72,6 @@ def write_deduplicated_file(
         if is_not_dupe(counted_tests, line)
     ]
     test_file.write_text("\n".join(deduplicated_lines) + "\n")
-
 
 
 class YamlGramTest(GramTest):
@@ -92,20 +95,14 @@ class YamlGramTest(GramTest):
         yaml_content = load_yaml_file(filename)
 
 
-        if ctx.obj.get("remove_dupes", False):
-            if has_dupes(yaml_content.tests):
+        if has_dupes(yaml_content.tests):
+            if ctx.obj.get("remove_dupes", False):
                 self.remove_dupes(filename, yaml_content.tests)
             else:
-                click.echo(f"No duplicate tests found in {filename}")
-            sys.exit(0)
-        
-        if has_dupes(yaml_content.tests):
-            print(
-                f"Error: Duplicate tests found in {filename}. "
-                f"Use --remove-dupes to automatically remove them.",
-                file=sys.stderr,
-            )
-            sys.exit(99)
+                raise YamlDuplicateError(
+                    f"Error: Duplicate tests found in {filename}. "
+                    f"Use --remove-dupes to automatically remove them.",
+                )
 
         yaml_config = YamlConfig(
             output=NoOutput()
@@ -133,11 +130,9 @@ class YamlGramTest(GramTest):
         }
 
         if counted_tests:
+            print(f"Removed the following dupes in {test_file}")
             print(
-                f"Removed the following dupes in {test_file}")
-            print("\n".join(
-                    "\t" + dupe for dupe in counted_tests
-                ),
+                "\n".join("\t" + dupe for dupe in counted_tests),
                 file=sys.stderr,
             )
             write_deduplicated_file(test_file, counted_tests)

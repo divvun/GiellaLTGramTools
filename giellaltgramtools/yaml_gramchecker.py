@@ -24,6 +24,12 @@ from giellaltgramtools.testdata import TestData
 from giellaltgramtools.yaml_config import YamlConfig
 
 
+class GramCheckerSentenceError(Exception):
+    """Exception for errors in grammar checker sentence processing."""
+
+    pass
+
+
 class YamlGramChecker(GramChecker):
     def __init__(self, config: YamlConfig):
         super().__init__()
@@ -123,14 +129,12 @@ class YamlGramChecker(GramChecker):
             test_sentence = item[0].sentence
             gramcheck_sentence = item[1].sentence
             if test_sentence != gramcheck_sentence:
-                print(
+                raise GramCheckerSentenceError(
                     "ERROR: GramDivvun has changed test sentence.\n"
                     f"'{test_sentence}' -> Input to GramDivvun\n"
                     f"'{gramcheck_sentence}' -> Output from GramDivvun\n",
                     "Tip: Check the test sentence using the grammar checker modes.",
-                    file=sys.stderr,
                 )
-                sys.exit(99)  # exit code 99 signals hard exit to Make
 
         return (
             self.clean_data(

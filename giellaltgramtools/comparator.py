@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 
+from giellaltgramtools.yaml_gramchecker import GramCheckerSentenceError
 from giellaltgramtools.yaml_gramtest import YamlGramTest, has_dupes
 from giellaltgramtools.yaml_test_file import load_yaml_file
 
@@ -61,10 +62,13 @@ def per_prefix_operations(yaml_dir_path: Path) -> None:
         if "runtime" not in i.name
     }
 
-    for prefix in prefixes:
-        test_checker(yaml_dir_path, prefix)
+    for prefix in sorted(prefixes):
         runtime_yaml_path_fail = make_runtime_yaml(yaml_dir_path, prefix)
-        test_runtime(runtime_yaml_path_fail)
+        try:
+            test_checker(yaml_dir_path, prefix)
+            test_runtime(runtime_yaml_path_fail)
+        except GramCheckerSentenceError as error:
+            print(f"\n{error!r}\n", file=sys.stderr)
 
 
 def test_checker(yaml_dir_path: Path, prefix: str) -> None:
@@ -77,13 +81,8 @@ def test_checker(yaml_dir_path: Path, prefix: str) -> None:
     for type_ in ["PASS", "FAIL"]:
         yaml_path = yaml_dir_path / f"{prefix}-{type_}.yaml"
         if yaml_path.exists():
-            print(f"Running divvun-checker tests on {yaml_path}...", flush=True, end=" ")
-            try:
-                run_yaml_tests(yaml_path, use_runtime=False)
-            except SystemExit as exc:  # avoid aborting the whole compare loop
-                if exc.code not in (0, None):
-                    raise
-            print("Done.", flush=True)
+            print(f"Running divvun-checker tests on {yaml_path} …")
+            run_yaml_tests(yaml_path, use_runtime=False)
 
 
 def test_runtime(yaml_path: Path) -> None:
