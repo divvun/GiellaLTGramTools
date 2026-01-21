@@ -1,7 +1,10 @@
 import json
 from dataclasses import dataclass
 
-from corpustools.error_annotated_sentence import ErrorAnnotatedSentence
+from corpustools.error_annotated_sentence import (
+    ErrorAnnotatedSentence,
+    parse_markup_to_sentence,
+)
 
 from giellaltgramtools.divvun_checker_fixes import fix_aistton
 from giellaltgramtools.errordata import (
@@ -16,6 +19,21 @@ from giellaltgramtools.errordatas import ErrorDatas, sort_by_range
 class GrammarErrorAnnotatedSentence:
     sentence: str
     errors: ErrorDatas
+
+
+def from_test_sentence(text: str) -> GrammarErrorAnnotatedSentence:
+    """Convert a test sentence to GrammarErrorAnnotatedSentence.
+
+    Args:
+        text: The test sentence with error markup.
+    Returns:
+        GrammarErrorAnnotatedSentence object.
+    Raises:
+        ValueError: If there are errors in parsing the test sentence.
+    """
+    return error_annotated_sentence_to_grammar_error_annotated_sentence(
+        parse_markup_to_sentence(iter(f"{text}." if text[-1] not in ".!?" else text))
+    )
 
 
 def error_annotated_sentence_to_grammar_error_annotated_sentence(

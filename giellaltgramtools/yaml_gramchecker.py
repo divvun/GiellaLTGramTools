@@ -7,10 +7,6 @@ import sys
 from pathlib import Path
 from typing import Iterator
 
-from corpustools.error_annotated_sentence import (
-    parse_markup_to_sentence,
-)
-
 from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import (
     GramChecker,
@@ -18,7 +14,7 @@ from giellaltgramtools.gramchecker import (
 )
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
-    error_annotated_sentence_to_grammar_error_annotated_sentence,
+    from_test_sentence,
 )
 from giellaltgramtools.testdata import TestData
 from giellaltgramtools.yaml_config import YamlConfig
@@ -103,20 +99,14 @@ class YamlGramChecker(GramChecker):
         """Make GrammarErrorAnnotatedSentence from the test sentences."""
         for index, text in enumerate(self.config.tests):
             if text.strip():
-                modified_text = f"{text}." if text[-1] not in ".!?" else text
                 try:
-                    error_annotated_sentence = parse_markup_to_sentence(
-                        iter(modified_text)
-                    )
+                    yield from_test_sentence(text)
                 except ValueError as error:
                     self.print_error(
                         f"Error parsing test sentence {index + 1}\n{text} in "
                         f"{self.config.test_file}:\n{error}"
                     )
                     raise SystemExit(4) from error
-                yield error_annotated_sentence_to_grammar_error_annotated_sentence(
-                    error_annotated_sentence
-                )
 
     def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
         error_datas: list[GrammarErrorAnnotatedSentence] = list(self.make_error_datas())
