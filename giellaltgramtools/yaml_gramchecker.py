@@ -20,6 +20,35 @@ from giellaltgramtools.testdata import TestData
 from giellaltgramtools.yaml_config import YamlConfig
 
 
+def check_if_grammarchecker_changed_input(
+    error_datas: list[GrammarErrorAnnotatedSentence],
+    grammar_datas: list[GrammarErrorAnnotatedSentence],
+) -> None:
+    """Check if grammar checker has changed the input sentences.
+
+    Args:
+        error_datas: List of GrammarErrorAnnotatedSentence from test data.
+        grammar_datas: List of GrammarErrorAnnotatedSentence from grammar checker.
+    Raises:
+        GramCheckerSentenceError: If grammar checker has changed any input sentence.
+    """
+    differing_sentences: list[tuple[str, str]] = [
+        (item[0].sentence, item[1].sentence)
+        for item in zip(error_datas, grammar_datas, strict=True)
+        if item[0].sentence != item[1].sentence
+    ]
+    if differing_sentences:
+        for test_sentence, gramcheck_sentence in differing_sentences:
+            error_messages = "\n".join(
+                f"'{test_sentence}' -> Input to GramDivvun\n"
+                f"'{gramcheck_sentence}' -> Output from GramDivvun\n"
+            )
+            raise GramCheckerSentenceError(
+                f"ERROR: GramDivvun has changed test sentences.\n{error_messages}",
+                "Tip: Check the test sentences using the grammar checker modes.",
+            )
+
+
 class GramCheckerSentenceError(Exception):
     """Exception for errors in grammar checker sentence processing."""
 
@@ -95,36 +124,35 @@ class YamlGramChecker(GramChecker):
 
         return f"divvun-checker {checker_spec} {self.get_variant(spec_file)}"
 
-    def make_error_datas(self) -> Iterator[GrammarErrorAnnotatedSentence]:
+    def make_error_datas(self) -> list[GrammarErrorAnnotatedSentence]:
         """Make GrammarErrorAnnotatedSentence from the test sentences."""
+        invalid_tests: dict[int, str] = {}
+        valid_tests: list[GrammarErrorAnnotatedSentence] = []
         for index, text in enumerate(self.config.tests):
             if text.strip():
                 try:
-                    yield from_test_sentence(text)
-                except ValueError as error:
-                    self.print_error(
-                        f"Error parsing test sentence {index + 1}\n{text} in "
-                        f"{self.config.test_file}:\n{error}"
-                    )
-                    raise SystemExit(4) from error
+                    valid_tests.append(from_test_sentence(text))
+                except ValueError:
+                    invalid_tests[index + 1] = text
+        if invalid_tests:
+            error_messages = "\n".join(
+                f"  Line {line}: {test}" for line, test in invalid_tests.items()
+            )
+            raise GramCheckerSentenceError(
+                "Error: The following test sentences have invalid markup:\n"
+                f"{error_messages}",
+                "Please fix the markup and try again.",
+            )
+        return valid_tests
 
     def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
-        error_datas: list[GrammarErrorAnnotatedSentence] = list(self.make_error_datas())
+        error_datas: list[GrammarErrorAnnotatedSentence] = self.make_error_datas()
 
         grammar_datas = check_paragraphs_in_parallel(
             self.checker, [error_data.sentence for error_data in error_datas]
         )
 
-        for item in zip(error_datas, grammar_datas, strict=True):
-            test_sentence = item[0].sentence
-            gramcheck_sentence = item[1].sentence
-            if test_sentence != gramcheck_sentence:
-                raise GramCheckerSentenceError(
-                    "ERROR: GramDivvun has changed test sentence.\n"
-                    f"'{test_sentence}' -> Input to GramDivvun\n"
-                    f"'{gramcheck_sentence}' -> Output from GramDivvun\n",
-                    "Tip: Check the test sentence using the grammar checker modes.",
-                )
+        check_if_grammarchecker_changed_input(error_datas, grammar_datas)
 
         return (
             self.clean_data(
