@@ -60,13 +60,16 @@ def divvun_checker_output_to_grammar_error_annotated_sentence(
     gram_error = json.loads(divvun_checker_output)
     return GrammarErrorAnnotatedSentence(
         sentence=gram_error.get("text"),
-            errors=sort_by_range(fix_aistton(
+        errors=sort_by_range(
+            fix_aistton(
                 [
                     divvun_checker_to_error_data(d_error)
                     for d_error in gram_error.get("errs")
                 ]
-            )),
+            )
+        ),
     )
+
 
 def divvun_checker_to_grammar_error_annotated_sentences(
     result_str: str,
@@ -84,5 +87,3 @@ def divvun_checker_to_grammar_error_annotated_sentences(
         divvun_checker_output_to_grammar_error_annotated_sentence(gram_error)
         for gram_error in result_str.strip().split("\n")
     ]
-
-
