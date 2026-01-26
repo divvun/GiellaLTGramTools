@@ -152,7 +152,7 @@ class YamlGramChecker(GramChecker):
             self.checker, [error_data.sentence for error_data in error_datas]
         )
 
-        check_if_grammarchecker_changed_input(error_datas, grammar_datas)
+        # check_if_grammarchecker_changed_input(error_datas, grammar_datas)
 
         return (
             self.clean_data(
