@@ -147,6 +147,7 @@ def compare_checker_and_runtime(
     else:
         print(f"Results match for {prefix}.")
 
+
 def report_on_single_discrepancy(test: str, yaml_dir_path: Path, language: str) -> None:
     """Report details on a single test discrepancy.
     Args:
@@ -155,8 +156,7 @@ def report_on_single_discrepancy(test: str, yaml_dir_path: Path, language: str) 
     print(f"'{test}'")
     grammar_annotated_sentence = from_test_sentence(test)
     checker_result = check_paragraphs(
-        f"divvun-checker -s {yaml_dir_path.parent / 'pipespec.xml'} "
-        f"-n {language}gram",
+        f"divvun-checker -s {yaml_dir_path.parent / 'pipespec.xml'} -n {language}gram",
         [grammar_annotated_sentence.sentence],
     )
     runtime_result = check_paragraphs(
@@ -166,6 +166,7 @@ def report_on_single_discrepancy(test: str, yaml_dir_path: Path, language: str) 
     pprint(asdict(checker_result[0]))
     pprint(asdict(runtime_result[0]))
     print()
+
 
 def build_yaml_ctx(use_runtime: bool) -> click.Context:
     """Create a minimal Click context compatible with YamlGramTest."""

@@ -39,7 +39,7 @@ def check_if_grammarchecker_changed_input(
     ]
     if differing_sentences:
         for test_sentence, gramcheck_sentence in differing_sentences:
-            error_messages = "\n".join(
+            error_messages = (
                 f"'{test_sentence}' -> Input to GramDivvun\n"
                 f"'{gramcheck_sentence}' -> Output from GramDivvun\n"
             )
