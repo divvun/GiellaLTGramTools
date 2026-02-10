@@ -3,18 +3,18 @@
 # Copyright © 2020-2024 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
-
 from collections import Counter
 
 from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.testdata import TestData
+from giellaltgramtools.yaml_config import YamlConfig
 
 
 class GramTest:
 
     def __init__(self):
         self.count = Counter()
-        self.config = None
+        self.config = YamlConfig()
 
     def make_test_report(self) -> None:
         test_results: list[TestData] = list(self.make_test_results())
