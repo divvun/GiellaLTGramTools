@@ -164,6 +164,7 @@ class YamlGramTest(GramTest):
                 pass_path.write_text(yaml.dump(pass_data) + "\nTests:\n")
 
             with pass_path.open("a") as pass_stream:
+                print(file=pass_stream)
                 for this_test in passing_tests:
                     quote_mark = "'" if '"' in this_test else '"'
                     print(f"  - {quote_mark}{this_test}{quote_mark}", file=pass_stream)
@@ -198,6 +199,7 @@ class YamlGramTest(GramTest):
                 del fail_data["Tests"]
                 fail_path.write_text(yaml.dump(fail_data) + "\nTests:\n")
             with fail_path.open("a") as fail_stream:
+                print(file=fail_stream)
                 for this_test in failing_tests:
                     quote_mark = "'" if '"' in this_test else '"'
                     print(f"  - {quote_mark}{this_test}{quote_mark}", file=fail_stream)
