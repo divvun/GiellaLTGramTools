@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from giellaltgramtools.finaloutput import FinalOutput
@@ -8,11 +8,11 @@ from giellaltgramtools.normaloutput import NormalOutput
 
 @dataclass
 class YamlConfig:
-    output: NormalOutput|FinalOutput|NoOutput
-    hide_passes: bool
-    move_tests: bool
-    spec: Path
-    variant: str
-    tests: list[str]
-    test_file: Path
-    use_runtime: bool
+    spec: Path = Path()
+    variant: str = "default"
+    output: NormalOutput|FinalOutput|NoOutput = NormalOutput()
+    hide_passes: bool = False
+    move_tests: bool = False
+    tests: list[str] = field(default_factory=list)
+    test_file: Path = Path()
+    use_runtime: bool = False
