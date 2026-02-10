@@ -143,8 +143,8 @@ class GramTest:
         if not (self.config.hide_passes and not has_fails):
             out.result(test_number, count)
 
-        for key in count:
-            self.count[key] += count[key]
+        for key, value in count.items():
+            self.count[key] += value
 
         # Did this test sentence as a whole pass or not
         return not has_fails
@@ -169,7 +169,7 @@ class GramTest:
         )
 
     def has_true_negatives(
-        self, correct: list[ErrorData], dc: list[ErrorData]
+        self, correct: tuple[ErrorData, ...], dc: tuple[ErrorData, ...]
     ) -> list[tuple[ErrorData, ErrorData]]:
         if not correct and not dc:
             return [
@@ -196,7 +196,7 @@ class GramTest:
         return []
 
     def has_true_positives(
-        self, correct: list[ErrorData], dc: list[ErrorData]
+        self, correct: tuple[ErrorData, ...], dc: tuple[ErrorData, ...]
     ) -> list[tuple[ErrorData, ErrorData]]:
         return [
             (c_error, d_error)
@@ -206,7 +206,7 @@ class GramTest:
         ]
 
     def has_false_positives_1(
-        self, correct: list[ErrorData], dc: list[ErrorData]
+        self, correct: tuple[ErrorData, ...], dc: tuple[ErrorData, ...]
     ) -> list[tuple[ErrorData, ErrorData]]:
         return [
             (c_error, d_error)
@@ -227,7 +227,7 @@ class GramTest:
         )
 
     def has_false_positives_2(
-        self, correct: list[ErrorData], dc: list[ErrorData]
+        self, correct: tuple[ErrorData, ...], dc: tuple[ErrorData, ...]
     ) -> list[ErrorData]:
         return [
             d_error
@@ -238,7 +238,7 @@ class GramTest:
         ]
 
     def has_false_negatives_2(
-        self, c_errors: list[ErrorData], d_errors: list[ErrorData]
+        self, c_errors: tuple[ErrorData, ...], d_errors: tuple[ErrorData, ...]
     ) -> list[ErrorData]:
         corrects: list[ErrorData] = []
         for c_error in c_errors:
@@ -251,7 +251,7 @@ class GramTest:
         return corrects
 
     def has_false_negatives_1(
-        self, correct: list[ErrorData], dc: list[ErrorData]
+        self, correct: tuple[ErrorData, ...], dc: tuple[ErrorData, ...]
     ) -> list[tuple[ErrorData, ErrorData]]:
         return [
             (c_error, d_error)
