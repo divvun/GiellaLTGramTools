@@ -5,7 +5,6 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 import sys
 from collections import Counter
-from io import StringIO
 from pathlib import Path
 from typing import Iterable
 
@@ -26,7 +25,9 @@ from giellaltgramtools.yaml_test_file import load_yaml_file
 
 class YamlDuplicateError(Exception):
     """Exception for duplicate tests in YAML test files."""
+
     pass
+
 
 def has_dupes(tests: list[str]) -> bool:
     """Check if there are duplicate tests."""
@@ -93,7 +94,6 @@ class YamlGramTest(GramTest):
                 COLORS[key] = ""
 
         yaml_content = load_yaml_file(filename)
-
 
         if has_dupes(yaml_content.tests):
             if ctx.obj.get("remove_dupes", False):
@@ -163,27 +163,20 @@ class YamlGramTest(GramTest):
                 del pass_data["Tests"]
                 pass_path.write_text(yaml.dump(pass_data) + "\nTests:\n")
 
-            with pass_path.open("a") as pass_stream:
-                print(file=pass_stream)
-                for this_test in passing_tests:
-                    quote_mark = "'" if '"' in this_test else '"'
-                    print(f"  - {quote_mark}{this_test}{quote_mark}", file=pass_stream)
+            pass_contents = pass_path.read_text().splitlines()
+            for this_test in passing_tests:
+                quote_mark = "'" if '"' in this_test else '"'
+                pass_contents.append(f"  - {quote_mark}{this_test}{quote_mark}")
+            pass_path.write_text("\n".join(pass_contents) + "\n")
 
-            with StringIO() as temp_stream:
-                with self.config.test_file.open("r") as _input:
-                    temp_stream.write(
-                        "".join(
-                            [
-                                line
-                                for line in _input
-                                if not any(
-                                    passing_test in line.strip()
-                                    for passing_test in passing_tests
-                                )
-                            ]
-                        )
-                    )
-                self.config.test_file.open("w").write(temp_stream.getvalue())
+            fail_contents = [
+                line
+                for line in self.config.test_file.read_text().splitlines()
+                if not any(
+                    passing_test in line.strip() for passing_test in passing_tests
+                )
+            ]
+            self.config.test_file.write_text("\n".join(fail_contents) + "\n")
 
     def move_fails_from_pass(self) -> None:
         if "PASS" in self.config.test_file.name and any(self.test_outcomes):
@@ -198,26 +191,21 @@ class YamlGramTest(GramTest):
                 fail_data = self.yaml_reader(self.config.test_file)
                 del fail_data["Tests"]
                 fail_path.write_text(yaml.dump(fail_data) + "\nTests:\n")
-            with fail_path.open("a") as fail_stream:
-                print(file=fail_stream)
-                for this_test in failing_tests:
-                    quote_mark = "'" if '"' in this_test else '"'
-                    print(f"  - {quote_mark}{this_test}{quote_mark}", file=fail_stream)
-            with StringIO() as temp_stream:
-                with self.config.test_file.open("r") as _input:
-                    temp_stream.write(
-                        "".join(
-                            [
-                                line
-                                for line in _input
-                                if not any(
-                                    failing_test in line.strip()
-                                    for failing_test in failing_tests
-                                )
-                            ]
-                        )
-                    )
-                self.config.test_file.open("w").write(temp_stream.getvalue())
+
+            fail_contents = fail_path.read_text().splitlines()
+            for this_test in failing_tests:
+                quote_mark = "'" if '"' in this_test else '"'
+                fail_contents.append(f"  - {quote_mark}{this_test}{quote_mark}")
+            fail_path.write_text("\n".join(fail_contents) + "\n")
+
+            pass_contents = [
+                line
+                for line in self.config.test_file.read_text().splitlines()
+                if not any(
+                    failing_test in line.strip() for failing_test in failing_tests
+                )
+            ]
+            self.config.test_file.write_text("\n".join(pass_contents) + "\n")
 
     def run(self) -> int:
         failed_or_not = super().run()
