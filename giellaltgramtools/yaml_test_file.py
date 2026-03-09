@@ -45,6 +45,12 @@ def load_yaml_file(yaml_test_file: Path) -> YamlTestFile:
         raise YamlTestFileError(
             f"ERROR: No variants in {yaml_test_file}",
         )
+    if isinstance(config['Variants'], str):
+        raise YamlTestFileError(
+            f"ERROR: Variants should be written as «[{config['Variants']}]», "
+            f"not as «{config['Variants']}»"
+            "\nTip: Check the format of the Variants field in the YAML file.",
+        )
 
     if not yaml_content.get("Tests", []):
         raise YamlTestFileError(
