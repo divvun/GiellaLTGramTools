@@ -1,113 +1,78 @@
 # -*- coding:utf-8 -*-
 
-# Copyright © 2020-2024 UiT The Arctic University of Norway
+# Copyright © 2020-2026 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
-
-
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Iterable
 
-from corpustools import ccat  # type: ignore
-from lxml.etree import _Element, _ElementTree, parse
+from click import Context
 
 from giellaltgramtools.common import COLORS
+from giellaltgramtools.corpus_config import CorpusConfig
 from giellaltgramtools.corpus_gramchecker import CorpusGramChecker
 from giellaltgramtools.gramtest import GramTest
 from giellaltgramtools.normaloutput import NormalOutput
 from giellaltgramtools.testdata import TestData
 
 
+def fix_corpus_name(name: str) -> str:
+    free_name_length = 2
+    parts = name.split("-")
+    if len(parts) == free_name_length:
+        return f"{name}-orig"
+
+    return "-".join([*parts[:free_name_length], "orig", *parts[free_name_length:]])
+
+
+def do_replacements(path: Path) -> Path:
+    parts = [
+        fix_corpus_name(part) if part.startswith("corpus-") else part
+        for part in path.parts
+        if part not in ["converted", "goldstandard", "correct-no-gs"]
+    ]
+    new_path = Path(*parts)
+
+    return new_path.with_name(new_path.name.replace(".xml", ""))
+
+
 class CorpusGramTest(GramTest):
-    def __init__(self, args: dict[str, str], ignore_typos: bool, targets: list[str]):
+    def __init__(self, ctx: Context, ignore_typos: bool, targets: list[str]):
         super().__init__()
         self.targets = targets
 
-        self.config: dict[str, Any] = {
-            "out": NormalOutput(args),
-            "ignore_typos": ignore_typos,
-            "spec": Path(args.get("spec", "")),
-            "variants": [args.get("variant")] if args.get("variant") else [],
-        }
-        if not args.get("colour"):
+        self.config: CorpusConfig = CorpusConfig(
+            spec=Path(ctx.obj.get("spec", "")),
+            variant=ctx.obj.get("variant", ""),
+            output=NormalOutput(),
+            hide_passes=ctx.obj.get("hide_passes", False),
+            ignore_typos=ignore_typos,
+        )
+
+        if not ctx.obj.get("colour"):
             for key in list(COLORS.keys()):
                 COLORS[key] = ""
 
-    def flatten_para(self, para: _Element) -> None:
-        """Convert non-error xml elements into plain text."""
-        if not (para.tag.startswith("error") or para.tag == "correct"):
-            text = para.text if para.text else ""
-
-            if para.tail:
-                text += para.tail
-
-            parent = para.getparent()
-            if parent is not None:
-                parent.remove(para)
-                if parent.text:
-                    parent.text = parent.text + text
-                else:
-                    parent.text = text
-
-        for child in para:
-            self.flatten_para(child)
-
-    def _add_text_to_previous(self, url: _Element, previous: _Element) -> None:
-        """Add URL text and tail to previous element."""
-        if url.text is not None:
-            if previous.tail is not None:
-                previous.tail += url.text
-            else:
-                previous.tail = url.text
-        if url.tail is not None:
-            if previous.tail is not None:
-                previous.tail += url.tail
-            else:
-                previous.tail = url.tail
-
-    def _add_text_to_parent(self, url: _Element, parent: _Element) -> None:
-        """Add URL text and tail to parent element."""
-        if url.text is not None:
-            if parent.text is not None:
-                parent.text += url.text
-            else:
-                parent.text = url.text
-        if url.tail is not None:
-            if parent.text is not None:
-                parent.text += url.tail
-            else:
-                parent.text = url.tail
-
-    def keep_url(self, root: _ElementTree) -> None:
-        """Keep url as plain text."""
-        for url in root.xpath('.//errorlang[@correct="url"]'):
-            parent = url.getparent()
-            previous = url.getprevious()
-
-            if previous is not None:
-                self._add_text_to_previous(url, previous)
-            else:
-                self._add_text_to_parent(url, parent)
-
-            parent.remove(url)
-
-    def get_error_data(self, filename: str) -> Iterable[_Element]:
-        root: _ElementTree = parse(filename)
-        self.keep_url(root)
-        for para in root.iter("p"):
-            # the xml:lang attribute indicates that the sentence is not the expected
-            # language. These paragraphs are not included in the test.
-            if not para.get("{http://www.w3.org/XML/1998/namespace}lang"):
-                self.flatten_para(para)
-                yield para
+    def get_error_data(self, filename: Path) -> list[str]:
+        return [
+            line
+            for line in filename.read_text().splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
 
     def make_test_results(self) -> Iterable[TestData]:
+        filenames = (
+            do_replacements(path)
+            for target in self.targets
+            for path in Path(target).glob("**/*.xml")
+        )
+
         grammarchecker = CorpusGramChecker(self.config)
 
         return (
             test_data
-            for filename in ccat.find_files(self.targets, ".xml")
+            for filename in filenames
             for test_data in grammarchecker.make_test_results(
-                self.get_error_data(filename), filename=filename
+                self.get_error_data(filename), filename=filename.as_posix()
             )
         )

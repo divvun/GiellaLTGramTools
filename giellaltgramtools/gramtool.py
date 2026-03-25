@@ -13,10 +13,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this file. If not, see <http://www.gnu.org/licenses/>.
 #
-#   Copyright © 2024 The University of Tromsø
+#   Copyright © 2024-2026 The University of Tromsø
 #   http://giellatekno.uit.no & http://divvun.no
 #
 """GiellaLT tools for grammarchecker needs."""
+
 import sys
 from pathlib import Path
 
@@ -151,7 +152,7 @@ def yaml(  # noqa: PLR0913
 def xml(ctx: click.Context, count_typos: bool, targets: list[str]):
     """Test XML files."""
     try:
-        tester = CorpusGramTest(ctx.obj, count_typos, targets)
+        tester = CorpusGramTest(ctx, count_typos, targets)
         ret = tester.run()
         sys.stdout.write(str(tester))
         sys.exit(ret)

@@ -1,17 +1,19 @@
 # -*- coding:utf-8 -*-
 
-# Copyright © 2020-2024 UiT The Arctic University of Norway
+# Copyright © 2020-2026 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 import multiprocessing
 import subprocess
+import sys
 from functools import partial
-from typing import Iterator
+from typing import Iterable, Iterator
 
 from giellaltgramtools.errordata import ErrorData
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
     divvun_checker_to_grammar_error_annotated_sentences,
+    from_test_sentence,
 )
 from giellaltgramtools.runtime_parser import (
     runtime_to_grammar_error_annotated_sentences,
@@ -75,6 +77,12 @@ def check_paragraphs_in_parallel(
     return [item for sublist in grammar_chunks for item in sublist]
 
 
+class GramCheckerSentenceError(Exception):
+    """Exception for errors in grammar checker sentence processing."""
+
+    pass
+
+
 class GramChecker:
     def __init__(self, ignore_typos: bool = False):
         self.ignore_typos = ignore_typos
@@ -93,13 +101,11 @@ class GramChecker:
         ]
         return (
             tuple(
-
                 marked_error
                 for marked_error in marked_errors
                 if marked_error.error_type != "errorlang"
             ),
             tuple(
-
                 found_error
                 for found_error in found_errors
                 if not any(
@@ -118,13 +124,11 @@ class GramChecker:
         """Remove typos from test material."""
         return (
             tuple(
-
                 marked_error
                 for marked_error in marked_errors
                 if marked_error.error_type != "errorort"
             ),
             tuple(
-
                 found_error
                 for found_error in found_errors
                 if found_error.error_type != "typo"
@@ -152,4 +156,52 @@ class GramChecker:
             expected_errors=expected_errors,
             gramcheck_errors=gramcheck_errors,
             filename=filename,
+        )
+
+    def make_error_datas(self, tests: list[str]) -> list[GrammarErrorAnnotatedSentence]:
+        """Make GrammarErrorAnnotatedSentence from the test sentences."""
+        invalid_tests: dict[int, str] = {}
+        valid_tests: list[GrammarErrorAnnotatedSentence] = []
+        for index, text in enumerate(tests):
+            if text.strip():
+                try:
+                    valid_tests.append(from_test_sentence(text))
+                except ValueError:
+                    invalid_tests[index + 1] = text
+        if invalid_tests:
+            error_messages = "\n".join(
+                f"  Line {line}: {test}" for line, test in invalid_tests.items()
+            )
+            raise GramCheckerSentenceError(
+                "Error: The following test sentences have invalid markup:\n"
+                f"{error_messages}",
+                "Please fix the markup and try again.",
+            )
+        return valid_tests
+
+    def make_test_results(self, tests: list[str], filename: str) -> Iterable[TestData]:
+        try:
+            error_datas: list[GrammarErrorAnnotatedSentence] = self.make_error_datas(
+                tests
+            )
+        except GramCheckerSentenceError as error:
+            print(f"Error in {filename}:", file=sys.stderr)
+            for message in error.args:
+                print(message, file=sys.stderr)
+            raise SystemExit() from error
+
+        grammar_datas = check_paragraphs_in_parallel(
+            self.checker, [error_data.sentence for error_data in error_datas]
+        )
+
+        # check_if_grammarchecker_changed_input(error_datas, grammar_datas)
+
+        return (
+            self.clean_data(
+                sentence=item[0].sentence,
+                expected_errors=item[0].errors,
+                gramcheck_errors=item[1].errors,
+                filename=filename,
+            )
+            for item in zip(error_datas, grammar_datas, strict=True)
         )

@@ -1,22 +1,19 @@
 # -*- coding:utf-8 -*-
 
-# Copyright © 2020-2024 UiT The Arctic University of Norway
+# Copyright © 2020-2026 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 import sys
 from pathlib import Path
-from typing import Iterator
 
 from giellaltgramtools.common import get_pipespecs
 from giellaltgramtools.gramchecker import (
     GramChecker,
-    check_paragraphs_in_parallel,
+    GramCheckerSentenceError,
 )
 from giellaltgramtools.grammar_error_annotated_sentence import (
     GrammarErrorAnnotatedSentence,
-    from_test_sentence,
 )
-from giellaltgramtools.testdata import TestData
 from giellaltgramtools.yaml_config import YamlConfig
 
 
@@ -47,12 +44,6 @@ def check_if_grammarchecker_changed_input(
                 f"ERROR: GramDivvun has changed test sentences.\n{error_messages}",
                 "Tip: Check the test sentences using the grammar checker modes.",
             )
-
-
-class GramCheckerSentenceError(Exception):
-    """Exception for errors in grammar checker sentence processing."""
-
-    pass
 
 
 class YamlGramChecker(GramChecker):
@@ -123,43 +114,3 @@ class YamlGramChecker(GramChecker):
         )
 
         return f"divvun-checker {checker_spec} {self.get_variant(spec_file)}"
-
-    def make_error_datas(self) -> list[GrammarErrorAnnotatedSentence]:
-        """Make GrammarErrorAnnotatedSentence from the test sentences."""
-        invalid_tests: dict[int, str] = {}
-        valid_tests: list[GrammarErrorAnnotatedSentence] = []
-        for index, text in enumerate(self.config.tests):
-            if text.strip():
-                try:
-                    valid_tests.append(from_test_sentence(text))
-                except ValueError:
-                    invalid_tests[index + 1] = text
-        if invalid_tests:
-            error_messages = "\n".join(
-                f"  Line {line}: {test}" for line, test in invalid_tests.items()
-            )
-            raise GramCheckerSentenceError(
-                "Error: The following test sentences have invalid markup:\n"
-                f"{error_messages}",
-                "Please fix the markup and try again.",
-            )
-        return valid_tests
-
-    def make_test_results(self, tests: list[str]) -> Iterator[TestData]:
-        error_datas: list[GrammarErrorAnnotatedSentence] = self.make_error_datas()
-
-        grammar_datas = check_paragraphs_in_parallel(
-            self.checker, [error_data.sentence for error_data in error_datas]
-        )
-
-        # check_if_grammarchecker_changed_input(error_datas, grammar_datas)
-
-        return (
-            self.clean_data(
-                sentence=item[0].sentence,
-                expected_errors=item[0].errors,
-                gramcheck_errors=item[1].errors,
-                filename=self.config.test_file.name,
-            )
-            for item in zip(error_datas, grammar_datas, strict=True)
-        )
