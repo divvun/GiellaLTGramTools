@@ -147,7 +147,7 @@ class YamlGramTest(GramTest):
             return []
 
         grammarchecker = YamlGramChecker(self.config)
-        return grammarchecker.make_test_results(self.config.tests)
+        return grammarchecker.make_test_results(self.config.tests, self.config.variant)
 
     def move_passes_from_fail(self) -> None:
         if "FAIL" in self.config.test_file.name and any(self.test_outcomes):
