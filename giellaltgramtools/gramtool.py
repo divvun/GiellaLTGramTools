@@ -25,6 +25,7 @@ import click
 
 from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
+from giellaltgramtools.count_tests import report_test_counts
 from giellaltgramtools.make_grammarchecker_zip import make_archive
 from giellaltgramtools.yaml_gramchecker import GramCheckerSentenceError
 from giellaltgramtools.yaml_gramtest import YamlDuplicateError, YamlGramTest
@@ -173,3 +174,10 @@ def build_archive(pipe_spec: str, archive_name: str):
 def compare(language: str):
     """Compare divvun-checker and divvun-runtime test results."""
     engine_comparator(language)
+
+
+@main.command()
+@click.argument("test_directory", type=click.Path(exists=True))
+def count_tests(test_directory: str):
+    """Count the number of PASS and FAIL tests in a given directory."""
+    report_test_counts(test_directory)
