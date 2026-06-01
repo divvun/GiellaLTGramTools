@@ -26,7 +26,6 @@ class GrammarErrorAnnotatedSentence:
         for error in reversed(self.errors):
             string_parts.append(self.sentence[error.end : previous_error])
             string_parts.append(error.to_manual_markup())
-            print(f"Error part: {error.to_manual_markup()}")
             previous_error = error.start
 
         string_parts.append(self.sentence[:previous_error])

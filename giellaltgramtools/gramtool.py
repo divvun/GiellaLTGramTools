@@ -23,6 +23,7 @@ from pathlib import Path
 
 import click
 
+from giellaltgramtools.candidates import create_yaml_candidates
 from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
 from giellaltgramtools.count_tests import report_test_counts
@@ -181,3 +182,22 @@ def compare(language: str):
 def count_tests(test_directory: str):
     """Count the number of PASS and FAIL tests in a given directory."""
     report_test_counts(test_directory)
+
+
+@main.command()
+@click.argument("input_file", type=click.Path(exists=True))
+@click.argument("candidate_name", type=click.Path())
+@click.argument("archive_path", type=click.Path(exists=True))
+@click.option(
+    "-f",
+    "--filter",
+    "filter_text",
+    type=str,
+    default=None,
+    help="Only include candidates of this error type (e.g. 'msyn')",
+)
+def create_candidates(
+    input_file: str, candidate_name: str, archive_path: str, filter_text: str | None
+):
+    """Create candidate files for testing."""
+    create_yaml_candidates(input_file, candidate_name, Path(archive_path), filter_text)
