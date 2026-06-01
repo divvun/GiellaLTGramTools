@@ -35,7 +35,7 @@ def gramcheck_candidates(
     )
 
     return {
-        "Config": {"Spec": "../pipespec.xml", "Variants": [variant]},
+        "Config": {"Spec": "../../pipespec.xml", "Variants": [variant]},
         "Tests": [result.to_manual_markup() for result in checker_results]
         if filter_text is None
         else [
