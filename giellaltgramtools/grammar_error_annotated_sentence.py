@@ -20,6 +20,19 @@ class GrammarErrorAnnotatedSentence:
     sentence: str
     errors: ErrorDatas
 
+    def to_manual_markup(self) -> str:
+        string_parts: list[str] = []
+        previous_error = len(self.sentence)
+        for error in reversed(self.errors):
+            string_parts.append(self.sentence[error.end : previous_error])
+            string_parts.append(error.to_manual_markup())
+            print(f"Error part: {error.to_manual_markup()}")
+            previous_error = error.start
+
+        string_parts.append(self.sentence[:previous_error])
+        string_parts.reverse()
+        return "".join(string_parts)
+
 
 def from_test_sentence(text: str) -> GrammarErrorAnnotatedSentence:
     """Convert a test sentence to GrammarErrorAnnotatedSentence.

@@ -17,6 +17,30 @@ class ErrorData:
     explanation: str
     suggestions: tuple[str, ...] = field(default_factory=tuple)
 
+    def error_type_to_symbol(self) -> str:
+        """Convert an error type to a symbol for manual markup.
+
+        Args:
+            error_type (str): The error type to convert.
+        Returns:
+            str: The symbol corresponding to the error type.
+        """
+        if self.error_type == "typo":
+            return "$"
+        return "§"
+
+    def to_manual_markup(self):
+        return (
+            "{"
+            f"{self.error_string}"
+            "}"
+            f"{self.error_type_to_symbol()}"
+            "{"
+            f"{self.error_type}|"
+            f"{','.join(self.suggestions)}"
+            "}"
+        )
+
 
 def error_markup_to_error_data(error_markup: ErrorMarkup, offset: int = 0) -> ErrorData:
     """Convert an ErrorMarkup to ErrorData.
@@ -60,6 +84,7 @@ def divvun_checker_to_error_data(
         suggestions=divvun_checker_error[5],
     )
 
+
 def is_markup_equal_to_grammar_error(
     error_markup: ErrorData,
     grammar_error: ErrorData,
@@ -73,10 +98,13 @@ def is_markup_equal_to_grammar_error(
     Returns:
         bool: True if equal, False otherwise.
     """
-    
+
     return (
         error_markup.error_string == grammar_error.error_string
         and error_markup.start == grammar_error.start
         and error_markup.end == grammar_error.end
-        and any(markup_suggestion in grammar_error.suggestions for markup_suggestion in error_markup.suggestions)
+        and any(
+            markup_suggestion in grammar_error.suggestions
+            for markup_suggestion in error_markup.suggestions
+        )
     )
