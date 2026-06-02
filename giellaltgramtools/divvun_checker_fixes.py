@@ -44,7 +44,11 @@ def fix_aistton_right(aistton_right: ErrorData) -> ErrorData:
         end=aistton_right.end,
         error_type=aistton_right.error_type,
         explanation=aistton_right.explanation,
-        suggestions=(aistton_right.suggestions[0][-1],),
+        suggestions=(
+            (aistton_right.suggestions[0][-1],)
+            if aistton_right.suggestions
+            else ("",)
+        ),
     )
 
 
