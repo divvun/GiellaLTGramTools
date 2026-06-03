@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "GiellaLTGramTools"
-version = "1.12.2"
+version = "1.12.3"
 description = "Package and test grammar files for the GiellaLT project"
 authors = ["Børre Gaup <albbas@gmail.com>"]
 readme = "README.md"
