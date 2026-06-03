@@ -185,9 +185,9 @@ def count_tests(test_directory: str):
 
 
 @main.command()
+@click.argument("archive_path", type=click.Path(exists=True))
 @click.argument("input_file", type=click.Path(exists=True))
 @click.argument("candidate_name", type=click.Path())
-@click.argument("archive_path", type=click.Path(exists=True))
 @click.option(
     "-f",
     "--filter",
