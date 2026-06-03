@@ -46,7 +46,7 @@ def fix_aistton_right(aistton_right: ErrorData) -> ErrorData:
         explanation=aistton_right.explanation,
         suggestions=(
             (aistton_right.suggestions[0][-1],)
-            if aistton_right.suggestions
+            if aistton_right.suggestions and aistton_right.suggestions[0]
             else ("",)
         ),
     )
