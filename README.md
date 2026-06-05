@@ -1,8 +1,10 @@
 # GiellaLTGramTools
 
-This repo contains scripts that creates the GiellaLT gramchecker .zcheck file and runs tests.
+This repo contains scripts that creates the GiellaLT gramchecker .zcheck file
+and runs tests.
 
-Install these tools by running `pipx install -f git+https://github.com/divvun/GiellaLTGramTools`
+Install these tools by running
+`pipx install -f git+https://github.com/divvun/GiellaLTGramTools`
 
 ## Runtime dependency
 
@@ -55,17 +57,33 @@ Options:
   --help             Show this message and exit.
 ```
 
+### Create candidate files
+
+Use `create-candidates` to generate candidate YAML files. Input is read from
+stdin only. The default prefix is today's date in `YYYY-mm-dd` format.
+
+- From a file: `gtgramtool create-candidates path/to/archive.zcheck < input.txt`
+- From a pipe:
+  `cat input.txt | gtgramtool create-candidates path/to/archive.zcheck`
+- With custom prefix:
+  `cat input.txt | gtgramtool create-candidates path/to/archive.zcheck --candidate_prefix my-prefix`
+
 #### Example for South Sámi
 
-- With colors, use pipespec, release variant, ignore typos: `gtgramtool test -c -s $GTLANGS/lang-sma/tools/grammarcheckers/pipespec.xml -V smagram-release xml $GTLANGS/corpus-sma/goldstandard/converted $GTLANGS/corpus-sma-x-closed/goldstandard/converted`
-- With colors, use .zcheck-file, development variant, count typos: `gtgramtool test -c -s $GTLANGS/lang-sma/tools/grammarcheckers/sma.zcheck -V smagram xml -t $GTLANGS/corpus-sma/goldstandard/converted $GTLANGS/corpus-sma-x-closed/goldstandard/converted`
+- With colors, use pipespec, release variant, ignore typos:
+  `gtgramtool test -c -s $GTLANGS/lang-sma/tools/grammarcheckers/pipespec.xml -V smagram-release xml $GTLANGS/corpus-sma/goldstandard/converted $GTLANGS/corpus-sma-x-closed/goldstandard/converted`
+- With colors, use .zcheck-file, development variant, count typos:
+  `gtgramtool test -c -s $GTLANGS/lang-sma/tools/grammarcheckers/sma.zcheck -V smagram xml -t $GTLANGS/corpus-sma/goldstandard/converted $GTLANGS/corpus-sma-x-closed/goldstandard/converted`
 
 For other languages, exchange `sma` for your language
 
-The environment variable `GTLANGS` points to the directory where [giellalt repositories](https://github.com/giellalt) have been cloned. On the writers system it is specified like this:
+The environment variable `GTLANGS` points to the directory where
+[giellalt repositories](https://github.com/giellalt) have been cloned. On the
+writers system it is specified like this:
 
 ```sh
 export GTLANGS="$HOME/repos/giellalt"
 ```
 
-Exchange `repos/giellalt` with your path to the giellalt directory on your system.
+Exchange `repos/giellalt` with your path to the giellalt directory on your
+system.

@@ -19,6 +19,7 @@
 """GiellaLT tools for grammarchecker needs."""
 
 import sys
+from datetime import date
 from pathlib import Path
 
 import click
@@ -186,18 +187,23 @@ def count_tests(test_directory: str):
 
 @main.command()
 @click.argument("archive_path", type=click.Path(exists=True))
-@click.argument("input_file", type=click.Path(exists=True))
-@click.argument("candidate_name", type=click.Path())
 @click.option(
-    "-f",
-    "--filter",
-    "filter_text",
+    "--candidate_prefix",
     type=str,
-    default=None,
-    help="Only include candidates of this error type (e.g. 'msyn')",
+    default=date.today().strftime("%Y-%m-%d"),
+    help="Prefix for the candidates file (default: today's date in YYYY-mm-dd)",
 )
 def create_candidates(
-    input_file: str, candidate_name: str, archive_path: str, filter_text: str | None
+    archive_path: str,
+    candidate_prefix: str,
 ):
-    """Create candidate files for testing."""
-    create_yaml_candidates(input_file, candidate_name, Path(archive_path), filter_text)
+    """Create candidate files for testing from stdin input only."""
+    input_bytes = sys.stdin.buffer.read()
+    try:
+        create_yaml_candidates(input_bytes, candidate_prefix, Path(archive_path))
+    except FileNotFoundError as error:
+        print(
+            f"Error creating candidates: {error}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
