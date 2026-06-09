@@ -1,3 +1,5 @@
+from typing import Iterator
+import sys
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -29,9 +31,18 @@ def archive_path_to_variant(archive_path: Path) -> str:
     archive_lang = archive_path.stem
     return f"{langs.get(archive_lang, archive_lang)}gram"
 
+def chunk_lines(max_lines=100)-> Iterator[bytes]:
+    chunk = []
+    for line in sys.stdin.buffer: 
+        chunk.append(line)
+        if len(chunk) >= max_lines:
+            yield b"\n".join(chunk)
+            chunk = []
+    if chunk:
+        yield b"\n".join(chunk)
 
 def make_tokenised_output(input_bytes: bytes, lang_directory: Path) -> str:
-    tokeniser = lang_directory / "tools/tokenisers/tokeniser-gramcheck-gt-desc.pmhfst"
+    tokeniser = lang_directory / "tools/tokenisers/tokeniser-disamb-gt-desc.pmhfst"
     if not tokeniser.is_file():
         raise FileNotFoundError(f"Tokeniser not found at: {tokeniser}")
     command = ["hfst-tokenise", "--print-all", str(tokeniser)]
@@ -58,13 +69,13 @@ def classify_checker_result(result: GrammarErrorAnnotatedSentence) -> set[str]:
 
     return {error.error_type for error in result.errors if error.error_type != "typo"}
 
-
 def gramcheck_candidates(
-    input_bytes: bytes, archive_path: Path
+    archive_path: Path
 ) -> list[tuple[str, GrammarErrorAnnotatedSentence]]:
     """Run grammar checker on candidate file and return results."""
+
     sentences = make_sentences(
-        make_tokenised_output(input_bytes, archive_path.parent.parent.parent)
+        "".join([make_tokenised_output(line, archive_path.parent.parent.parent) for line in chunk_lines()])
     )
 
     variant = archive_path_to_variant(archive_path)
@@ -91,7 +102,7 @@ def error_type_to_file_component(error_type: str) -> str:
 
 
 def create_yaml_candidates(
-    input_bytes: bytes, candidate_prefix: str, archive_path: Path
+    candidate_prefix: str, archive_path: Path
 ) -> None:
     """Create candidate files for testing.
 
@@ -101,7 +112,6 @@ def create_yaml_candidates(
         archive_path: Path to the grammar checker archive.
     """
     candidate_list = gramcheck_candidates(
-        input_bytes=input_bytes,
         archive_path=archive_path,
     )
 

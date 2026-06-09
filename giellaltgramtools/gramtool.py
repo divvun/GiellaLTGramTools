@@ -21,6 +21,7 @@
 import sys
 from datetime import date
 from pathlib import Path
+from subprocess import CalledProcessError
 
 import click
 
@@ -198,10 +199,9 @@ def create_candidates(
     candidate_prefix: str,
 ):
     """Create candidate files for testing from stdin input only."""
-    input_bytes = sys.stdin.buffer.read()
     try:
-        create_yaml_candidates(input_bytes, candidate_prefix, Path(archive_path))
-    except FileNotFoundError as error:
+        create_yaml_candidates(candidate_prefix, Path(archive_path))
+    except (FileNotFoundError, CalledProcessError) as error:
         print(
             f"Error creating candidates: {error}",
             file=sys.stderr,
