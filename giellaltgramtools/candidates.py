@@ -1,9 +1,9 @@
-from typing import Iterator
-import sys
 import re
+import sys
 from collections import defaultdict
 from pathlib import Path
 from subprocess import PIPE, run
+from typing import Iterator
 
 import yaml
 from corpustools.sentencedivider import make_sentences
