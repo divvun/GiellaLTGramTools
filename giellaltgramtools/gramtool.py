@@ -17,6 +17,7 @@
 #   http://giellatekno.uit.no & http://divvun.no
 #
 """GiellaLT tools for grammarchecker needs."""
+from giellaltgramtools.asr_gramcheck import asr_output_checker
 
 import sys
 from datetime import date
@@ -204,6 +205,23 @@ def create_candidates(
     except (FileNotFoundError, CalledProcessError) as error:
         print(
             f"Error creating candidates: {error}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+@main.command()
+@click.argument("archive_path", type=click.Path(exists=True))
+@click.argument("asr_file", type=click.Path(exists=True))
+def gramcheck_asr_output(
+    archive_path: str,
+    asr_file: str,
+):
+    """Check ASR output against the grammar archive."""
+    try:
+        asr_output_checker(Path(asr_file), Path(archive_path))
+    except (FileNotFoundError, CalledProcessError) as error:
+        print(
+            f"Error checking ASR output: {error}",
             file=sys.stderr,
         )
         sys.exit(1)
