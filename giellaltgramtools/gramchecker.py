@@ -3,6 +3,7 @@
 # Copyright © 2020-2026 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
+from giellaltgramtools.yaml_gramchecker import check_if_grammarchecker_changed_input
 import multiprocessing
 import subprocess
 import sys
@@ -222,7 +223,7 @@ class GramChecker:
             self.checker, [error_data.sentence for error_data in error_datas]
         )
 
-        # check_if_grammarchecker_changed_input(error_datas, grammar_datas)
+        check_if_grammarchecker_changed_input(error_datas, grammar_datas)
 
         return (
             self.clean_data(
