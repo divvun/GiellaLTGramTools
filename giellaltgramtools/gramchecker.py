@@ -3,7 +3,6 @@
 # Copyright © 2020-2026 UiT The Arctic University of Norway
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
-from giellaltgramtools.yaml_gramchecker import check_if_grammarchecker_changed_input
 import multiprocessing
 import subprocess
 import sys
@@ -86,7 +85,7 @@ def chunks(lst: list[str], n: int) -> Iterator[list[str]]:
 
 
 def check_paragraphs_in_parallel(
-    command: str, paragraphs: list[str]
+    command: str, paragraphs: list[str], num_processes: int | None = None
 ) -> list[GrammarErrorAnnotatedSentence]:
     """Check grammar of paragraphs in parallel.
 
@@ -97,7 +96,7 @@ def check_paragraphs_in_parallel(
         str: String version of grammarchecker outputs in divvun-checker format.
     """
     with_command = partial(check_paragraphs, command)
-    num_processes = multiprocessing.cpu_count()
+    num_processes = num_processes or multiprocessing.cpu_count()
     chunked_data = list(chunks(paragraphs, 10))
 
     with multiprocessing.Pool(processes=num_processes) as pool:
@@ -113,8 +112,13 @@ class GramCheckerSentenceError(Exception):
 
 
 class GramChecker:
-    def __init__(self, ignore_typos: bool = False):
+    def __init__(
+        self,
+        ignore_typos: bool = False,
+        num_processes: int | None = None,
+    ):
         self.ignore_typos = ignore_typos
+        self.num_processes = num_processes
         self.checker = ""
 
     def remove_foreign(
@@ -220,10 +224,26 @@ class GramChecker:
             raise SystemExit() from error
 
         grammar_datas = check_paragraphs_in_parallel(
-            self.checker, [error_data.sentence for error_data in error_datas]
+            self.checker,
+            [error_data.sentence for error_data in error_datas],
+            num_processes=self.num_processes,
         )
 
-        check_if_grammarchecker_changed_input(error_datas, grammar_datas)
+        differing_sentences: list[tuple[str, str]] = [
+            (item[0].sentence, item[1].sentence)
+            for item in zip(error_datas, grammar_datas, strict=True)
+            if item[0].sentence != item[1].sentence
+        ]
+        if differing_sentences:
+            for test_sentence, gramcheck_sentence in differing_sentences:
+                error_messages = (
+                    f"'{test_sentence}' -> Input to GramDivvun\n"
+                    f"'{gramcheck_sentence}' -> Output from GramDivvun\n"
+                )
+                raise GramCheckerSentenceError(
+                    f"ERROR: GramDivvun has changed test sentences.\n{error_messages}",
+                    "Tip: Check the test sentences using the grammar checker modes.",
+                )
 
         return (
             self.clean_data(

@@ -27,7 +27,11 @@ def parse_asr_output(asr_file: Path) -> dict[str, list[ASR_Result]]:
     return sentence_to_producers
 
 
-def asr_output_checker(asr_file: Path, archive_path: Path) -> None:
+def asr_output_checker(
+    asr_file: Path,
+    archive_path: Path,
+    num_processes: int | None = None,
+) -> None:
     """Check ASR output against the grammar archive."""
 
     parsed_asr_output = parse_asr_output(asr_file)
@@ -40,6 +44,7 @@ def asr_output_checker(asr_file: Path, archive_path: Path) -> None:
     checker_results = check_paragraphs_in_parallel(
         command=f"divvun-checker --archive {archive_path} --variant {variant}",
         paragraphs=list(parsed_asr_output.keys()),
+        num_processes=num_processes,
     )
     asr_grammarchecker_results: dict[str, list[ASR_grammarchecker_result]] = {}
     for checker_result in checker_results:

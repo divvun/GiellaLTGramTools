@@ -18,6 +18,7 @@
 #
 """GiellaLT tools for grammarchecker needs."""
 
+import multiprocessing
 import sys
 from datetime import date
 from pathlib import Path
@@ -35,6 +36,19 @@ from giellaltgramtools.make_grammarchecker_zip import make_archive
 from giellaltgramtools.yaml_gramchecker import GramCheckerSentenceError
 from giellaltgramtools.yaml_gramtest import YamlDuplicateError, YamlGramTest
 from giellaltgramtools.yaml_test_file import YamlTestFileError
+
+CPU_CHOICES = ["single", "half", "three-quarters", "full"]
+
+
+def cpu_profile_to_processes(cpu_profile: str) -> int:
+    total_cpus = multiprocessing.cpu_count()
+    if cpu_profile == "single":
+        return 1
+    if cpu_profile == "half":
+        return max(1, total_cpus // 2)
+    if cpu_profile == "three-quarters":
+        return max(1, (total_cpus * 3) // 4)
+    return total_cpus
 
 
 @click.group()
@@ -71,6 +85,13 @@ def main(ctx: click.Context):
     is_flag=True,
     help="Use divvun-runtime instead of divvun-checker",
 )
+@click.option(
+    "--cpus",
+    default="full",
+    type=click.Choice(CPU_CHOICES),
+    show_default=True,
+    help="How many CPU cores to use: single, half, three-quarters, or full",
+)
 @click.pass_context
 def test(  # noqa: PLR0913
     ctx: click.Context,
@@ -79,6 +100,7 @@ def test(  # noqa: PLR0913
     spec: str,
     variant: str,
     use_runtime: bool,
+    cpus: str,
 ):
     """Test the grammars."""
     ctx.ensure_object(dict)
@@ -88,6 +110,8 @@ def test(  # noqa: PLR0913
         "spec": spec,
         "variant": variant,
         "use_runtime": use_runtime,
+        "cpus": cpus,
+        "num_processes": cpu_profile_to_processes(cpus),
     }
 
 
@@ -207,13 +231,25 @@ def count_tests(test_directory: str):
     default=date.today().strftime("%Y-%m-%d"),
     help="Prefix for the candidates file (default: today's date in YYYY-mm-dd)",
 )
+@click.option(
+    "--cpus",
+    default="full",
+    type=click.Choice(CPU_CHOICES),
+    show_default=True,
+    help="How many CPU cores to use: single, half, three-quarters, or full",
+)
 def create_candidates(
     archive_path: str,
     candidate_prefix: str,
+    cpus: str,
 ):
     """Create candidate files for testing from stdin input only."""
     try:
-        create_yaml_candidates(candidate_prefix, Path(archive_path))
+        create_yaml_candidates(
+            candidate_prefix,
+            Path(archive_path),
+            num_processes=cpu_profile_to_processes(cpus),
+        )
     except (FileNotFoundError, CalledProcessError, GrammarCheckerCommandError) as error:
         print(
             f"Error creating candidates: {error}",
@@ -225,13 +261,25 @@ def create_candidates(
 @main.command()
 @click.argument("archive_path", type=click.Path(exists=True))
 @click.argument("asr_file", type=click.Path(exists=True))
+@click.option(
+    "--cpus",
+    default="full",
+    type=click.Choice(CPU_CHOICES),
+    show_default=True,
+    help="How many CPU cores to use: single, half, three-quarters, or full",
+)
 def gramcheck_asr_output(
     archive_path: str,
     asr_file: str,
+    cpus: str,
 ):
     """Check ASR output against the grammar archive."""
     try:
-        asr_output_checker(Path(asr_file), Path(archive_path))
+        asr_output_checker(
+            Path(asr_file),
+            Path(archive_path),
+            num_processes=cpu_profile_to_processes(cpus),
+        )
     except (FileNotFoundError, CalledProcessError, GrammarCheckerCommandError) as error:
         print(
             f"Error checking ASR output: {error}",

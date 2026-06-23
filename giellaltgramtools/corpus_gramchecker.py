@@ -14,7 +14,7 @@ class CorpusGramChecker(GramChecker):
     """Check for grammarerrors in errormarkup files from a Giella corpus."""
 
     def __init__(self, config: CorpusConfig):
-        super().__init__(config.ignore_typos)
+        super().__init__(config.ignore_typos, config.num_processes)
         self.config = config
         self.checker = self.app()
 

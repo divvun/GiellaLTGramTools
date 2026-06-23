@@ -119,6 +119,7 @@ class YamlGramTest(GramTest):
             tests=yaml_content.tests,
             test_file=filename,
             use_runtime=ctx.obj.get("use_runtime", False),
+            num_processes=ctx.obj.get("num_processes"),
         )
 
         return yaml_config

@@ -10,9 +10,10 @@ from giellaltgramtools.normaloutput import NormalOutput
 class YamlConfig:
     spec: Path = Path()
     variant: str = "default"
-    output: NormalOutput|FinalOutput|NoOutput = NormalOutput()
+    output: NormalOutput | FinalOutput | NoOutput = NormalOutput()
     hide_passes: bool = False
     move_tests: bool = False
     tests: list[str] = field(default_factory=list)
     test_file: Path = Path()
     use_runtime: bool = False
+    num_processes: int | None = None

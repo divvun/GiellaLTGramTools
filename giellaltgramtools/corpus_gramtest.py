@@ -47,6 +47,7 @@ class CorpusGramTest(GramTest):
             output=NormalOutput(),
             hide_passes=ctx.obj.get("hide_passes", False),
             ignore_typos=ignore_typos,
+            num_processes=ctx.obj.get("num_processes"),
         )
 
         if not ctx.obj.get("colour"):

@@ -13,3 +13,4 @@ class CorpusConfig:
     output: NormalOutput | FinalOutput | NoOutput = NormalOutput()
     hide_passes: bool = False
     ignore_typos: bool = False
+    num_processes: int | None = None

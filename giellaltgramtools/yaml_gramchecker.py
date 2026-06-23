@@ -48,7 +48,7 @@ def check_if_grammarchecker_changed_input(
 
 class YamlGramChecker(GramChecker):
     def __init__(self, config: YamlConfig):
-        super().__init__()
+        super().__init__(num_processes=config.num_processes)
         self.config = config
         # Check if runtime should be used
         self.use_runtime = config.use_runtime
