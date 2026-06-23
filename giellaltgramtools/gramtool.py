@@ -17,8 +17,6 @@
 #   http://giellatekno.uit.no & http://divvun.no
 #
 """GiellaLT tools for grammarchecker needs."""
-from giellaltgramtools.asr_gramcheck import asr_output_checker
-
 import sys
 from datetime import date
 from pathlib import Path
@@ -26,10 +24,12 @@ from subprocess import CalledProcessError
 
 import click
 
+from giellaltgramtools.asr_gramcheck import asr_output_checker
 from giellaltgramtools.candidates import create_yaml_candidates
 from giellaltgramtools.comparator import engine_comparator
 from giellaltgramtools.corpus_gramtest import CorpusGramTest
 from giellaltgramtools.count_tests import report_test_counts
+from giellaltgramtools.gramchecker import GrammarCheckerCommandError
 from giellaltgramtools.make_grammarchecker_zip import make_archive
 from giellaltgramtools.yaml_gramchecker import GramCheckerSentenceError
 from giellaltgramtools.yaml_gramtest import YamlDuplicateError, YamlGramTest
@@ -140,6 +140,12 @@ def yaml(  # noqa: PLR0913
             file=sys.stderr,
         )
         sys.exit(99)
+    except GrammarCheckerCommandError as error:
+        print(
+            str(error),
+            file=sys.stderr,
+        )
+        sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(130)
 
@@ -163,6 +169,12 @@ def xml(ctx: click.Context, count_typos: bool, targets: list[str]):
         sys.exit(ret)
     except KeyboardInterrupt:
         sys.exit(130)
+    except GrammarCheckerCommandError as error:
+        print(
+            str(error),
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
 
 @main.command()
@@ -202,7 +214,7 @@ def create_candidates(
     """Create candidate files for testing from stdin input only."""
     try:
         create_yaml_candidates(candidate_prefix, Path(archive_path))
-    except (FileNotFoundError, CalledProcessError) as error:
+    except (FileNotFoundError, CalledProcessError, GrammarCheckerCommandError) as error:
         print(
             f"Error creating candidates: {error}",
             file=sys.stderr,
@@ -219,7 +231,7 @@ def gramcheck_asr_output(
     """Check ASR output against the grammar archive."""
     try:
         asr_output_checker(Path(asr_file), Path(archive_path))
-    except (FileNotFoundError, CalledProcessError) as error:
+    except (FileNotFoundError, CalledProcessError, GrammarCheckerCommandError) as error:
         print(
             f"Error checking ASR output: {error}",
             file=sys.stderr,

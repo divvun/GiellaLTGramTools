@@ -21,6 +21,29 @@ from giellaltgramtools.runtime_parser import (
 from giellaltgramtools.testdata import TestData
 
 
+class GrammarCheckerCommandError(Exception):
+    """Exception for grammar checker command failures.
+
+    This exception is intentionally simple so it can be sent safely from
+    multiprocessing worker processes back to the parent process.
+    """
+
+    def __init__(self, command: str, returncode: int, stderr: str):
+        self.command = command
+        self.returncode = returncode
+        self.stderr = stderr
+        # Keep the original constructor args in Exception.args so the
+        # exception can be serialized/deserialized across multiprocessing.
+        super().__init__(command, returncode, stderr)
+
+    def __str__(self) -> str:
+        return (
+            f"Error running command: {self.command}\n"
+            f"Return code: {self.returncode}\n"
+            f"Stderr: {self.stderr}"
+        )
+
+
 def check_paragraphs(
     command: str, paragraphs: list[str]
 ) -> list[GrammarErrorAnnotatedSentence]:
@@ -40,7 +63,12 @@ def check_paragraphs(
         stderr=subprocess.PIPE,
         check=False,
     )
-
+    if result.returncode != 0:
+        raise GrammarCheckerCommandError(
+            command=command,
+            returncode=result.returncode,
+            stderr=result.stderr.decode("utf-8"),
+        )
     output = result.stdout.decode("utf-8")
     # If using divvun-runtime, convert output to divvun-checker format
     return (
