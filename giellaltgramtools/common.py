@@ -5,6 +5,7 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 
 """Write report on differences on manual markup and gramdivvun markup"""
+
 import ctypes
 import io
 import os

@@ -69,7 +69,7 @@ def fix_aistton_left(aistton_left: ErrorData) -> ErrorData:
             explanation=aistton_left.explanation,
             suggestions=(aistton_left.suggestions[0][0],),
         )
-    except IndexError: # Just return the original error if suggestions are missing
+    except IndexError:  # Just return the original error if suggestions are missing
         return aistton_left
 
 
@@ -145,7 +145,7 @@ def fix_hidden_by_aistton(
 
     # Convert to list to allow multiple iterations
     d_errors_list = list(d_errors)
-    
+
     aistton_ranges = [
         (error.start, error.end)
         for error in d_errors_list
@@ -156,6 +156,7 @@ def fix_hidden_by_aistton(
         fix_hidden_error(error) if is_hidden_error(error) else error
         for error in d_errors_list
     ]
+
 
 def fix_aistton(
     d_errors: Iterable[ErrorData],
@@ -185,5 +186,3 @@ def fix_aistton(
                 yield fix_aistton_right(d_error)
             else:
                 yield d_error
-
-

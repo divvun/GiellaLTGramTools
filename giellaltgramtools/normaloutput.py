@@ -25,11 +25,11 @@ def red(text: str) -> str:
 
 class NormalOutput(AllOutput):
     def title(self, index, length, test_case):
-        self.write(f'{colourise("{light_blue}")}')
+        self.write(f"{colourise('{light_blue}')}")
         self.write("-" * 10)
         self.write(f"\nTest {index}/{length}: {test_case}\n")
         self.write("-" * 10)
-        self.write(f'{colourise("{reset}")}\n')
+        self.write(f"{colourise('{reset}')}\n")
 
     def success(  # noqa: PLR0913
         self,

@@ -11,7 +11,6 @@ from giellaltgramtools.yaml_config import YamlConfig
 
 
 class GramTest:
-
     def __init__(self):
         self.count = Counter()
         self.config = YamlConfig()

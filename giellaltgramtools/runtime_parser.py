@@ -5,6 +5,7 @@
 # Author: Børre Gaup <borre.gaup@uit.no>
 
 """Parser for divvun-runtime output."""
+
 import json
 import re
 from dataclasses import asdict, dataclass
@@ -231,9 +232,7 @@ def runtime_to_grammar_error_annotated_sentences(
             oi.append(
                 GrammarErrorAnnotatedSentence(
                     sentence=new_data.sentence,
-                    errors=sort_by_range(
-                        fix_aistton(new_errors)
-                    ),
+                    errors=sort_by_range(fix_aistton(new_errors)),
                 )
             )
         except ValueError as error:

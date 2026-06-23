@@ -9,6 +9,7 @@ def count_test_cases(test_directory: str, filter_string: str) -> int:
         for yaml_file in Path(test_directory).glob(f"*{filter_string}.yaml")
     )
 
+
 def report_test_counts(test_directory: str) -> None:
     pass_count = count_test_cases(test_directory, "PASS")
     fail_count = count_test_cases(test_directory, "FAIL")

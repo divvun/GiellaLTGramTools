@@ -17,7 +17,8 @@ def divvun_runtime_to_aistton(
     if not error_data.suggestions:
         print(
             f"Cannot convert error with no suggestions to aistton error.\n"
-            f"{error_data!r}", file=sys.stderr
+            f"{error_data!r}",
+            file=sys.stderr,
         )
         return error_data
 
@@ -28,20 +29,22 @@ def divvun_runtime_to_aistton(
     except IndexError:
         print(
             f"Cannot convert error with empty suggestions to aistton error.\n"
-            f"{error_data!r}", file=sys.stderr
+            f"{error_data!r}",
+            file=sys.stderr,
         )
         return error_data
-        
+
     if first_suggestion[0] in "”’" and first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-both"
-    elif first_suggestion[0] in "”’" :
+    elif first_suggestion[0] in "”’":
         new_error_type = "punct-aistton-left"
     elif first_suggestion[-1] in "”’":
         new_error_type = "punct-aistton-right"
     else:
         print(
             f"Cannot convert error with suggestions {error_data.suggestions} "
-            f"to aistton error.\n{error_data!r}", file=sys.stderr
+            f"to aistton error.\n{error_data!r}",
+            file=sys.stderr,
         )
         return error_data
 

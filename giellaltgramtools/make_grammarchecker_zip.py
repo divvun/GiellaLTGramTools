@@ -4,6 +4,7 @@
 # License: GPL3  # noqa: ERA001
 # Author: Børre Gaup <borre.gaup@uit.no>
 """Make a grammarchecker zip archive without '-dev' variants"""
+
 from zipfile import ZipFile
 
 from lxml import etree
@@ -21,7 +22,7 @@ def get_pipespec(spec_file: str) -> etree.ElementTree:
     return pipespec
 
 
-def make_archive(specfile: str, archive_name: str)-> None:
+def make_archive(specfile: str, archive_name: str) -> None:
     """Make grammarchecker archive without '-dev' variants."""
     pipespec = get_pipespec(specfile)
     with ZipFile(archive_name, "w") as archive_zip:

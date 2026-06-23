@@ -10,4 +10,4 @@ class FinalOutput(AllOutput):
     def final_result(self, count):
         passes = sum([count[key] for key in count if key.startswith("t")])
         fails = sum([count[key] for key in count if key.startswith("f")])
-        self.write(f"{passes}/{fails}/{passes+fails}")
+        self.write(f"{passes}/{fails}/{passes + fails}")
