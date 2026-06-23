@@ -17,6 +17,7 @@
 #   http://giellatekno.uit.no & http://divvun.no
 #
 """GiellaLT tools for grammarchecker needs."""
+
 import sys
 from datetime import date
 from pathlib import Path
@@ -134,18 +135,17 @@ def yaml(  # noqa: PLR0913
         ret = tester.run()
         sys.stdout.write(str(tester))
         sys.exit(ret)
-    except (GramCheckerSentenceError, YamlTestFileError, YamlDuplicateError) as error:
+    except (
+        GramCheckerSentenceError,
+        YamlTestFileError,
+        YamlDuplicateError,
+        GrammarCheckerCommandError,
+    ) as error:
         print(
             f"{error}",
             file=sys.stderr,
         )
         sys.exit(99)
-    except GrammarCheckerCommandError as error:
-        print(
-            str(error),
-            file=sys.stderr,
-        )
-        sys.exit(1)
     except KeyboardInterrupt:
         sys.exit(130)
 
@@ -169,7 +169,7 @@ def xml(ctx: click.Context, count_typos: bool, targets: list[str]):
         sys.exit(ret)
     except KeyboardInterrupt:
         sys.exit(130)
-    except GrammarCheckerCommandError as error:
+    except (GrammarCheckerCommandError, GramCheckerSentenceError) as error:
         print(
             str(error),
             file=sys.stderr,
@@ -220,6 +220,7 @@ def create_candidates(
             file=sys.stderr,
         )
         sys.exit(1)
+
 
 @main.command()
 @click.argument("archive_path", type=click.Path(exists=True))
